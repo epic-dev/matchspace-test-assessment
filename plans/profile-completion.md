@@ -17,6 +17,7 @@ Today `POST /v1/register` collects only `name`, `email`, `password`, and optiona
 - ⚠️ POST-HOC (Task 1): a "no rows updated" outcome from `.update(...).eq("id", userId).select().single()` is detected via PostgREST's `PGRST116` ("no rows found") error code and mapped to a new `TeacherNotFoundError` (added to `lib/teachers/errors.ts`), distinct from the generic `RepositoryError`.
 - ⚠️ POST-HOC (Task 1): the existing `SupabaseTeacherRepository.register` adapter test's exact-equality assertions on the returned `Teacher` were updated to include the new nullable fields (all `null` for a fresh registration), since widening the `Teacher` type is a breaking change to that pre-existing test's `toEqual` expectations — no behavior of `register` itself changed.
 - ⚠️ POST-HOC (Task 2): per explicit mid-task instruction, `updateTeacherSchema` (`lib/teachers/update-schema.ts`) drops the business-rule constraints (`min(1)` on strings, `positive()` on `hourlyPrice`) that Task 2's own Steps said should mirror `registerSchema` — every field is optional *and* unconstrained beyond its basic type/shape (string/array-of-strings/boolean/number). An empty-string `bio` or a `hourlyPrice` of `0` now validate successfully; only type mismatches (e.g. `hourlyPrice: "40"`, non-array `instruments`) are rejected. `name`'s overlap-with-`registerSchema` constraint (non-empty) was dropped too, for consistency across all fields. Route handler and tests were written against this looser shape.
+- ⚠️ POST-HOC (Task 4): `ProfileForm` only exposes the remaining-fields set named in Task 4's own Steps (bio, instruments, education, credentials, location, online-availability) — it does not add `name`/`hourlyPrice` inputs even though `updateTeacherSchema` also accepts them, since those are already collected at registration and re-editing them wasn't in this task's stated Goal. The form also does not fetch/pre-fill the teacher's existing row on load (no `GET` call was in Task 4's Steps); it always starts from blank inputs and submits the full remaining-field set, per the plan's Assumptions. This means Open questions' later answer ("`/profile` also serves as the page a teacher returns to for ordinary edits") is only partially satisfied today — a returning teacher can still overwrite their profile via this same page/form, but won't see their current values pre-filled. Flagging this gap rather than silently building a `GET`-and-prefill flow that wasn't scoped/approved in this task.
 
 ## Tasks
 
@@ -66,6 +67,8 @@ Today `POST /v1/register` collects only `name`, `email`, `password`, and optiona
   5. Basic accessibility: labeled inputs, keyboard-submittable form, submit button disabled while pending — same bar as the existing registration form.
 - **Acceptance:** manually completing the form against a real Supabase project updates the `teachers` row with the new fields and shows a success state; invalid input shows inline errors before any network call; visiting `/profile` signed out shows the "please register first" state instead of the form.
 - **Depends on:** Task 2 (needs a working `PATCH /v1/teachers` to submit to).
+- **Status:** done
+- **Completed:** 2026-07-08
 
 ## Open questions
 BLOCKS-EXECUTION:
