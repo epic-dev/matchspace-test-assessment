@@ -40,15 +40,17 @@ type TeacherRow = {
 
 export class SupabaseTeacherRepository implements TeacherRepository {
   /**
-   * @param supabase Cookie-based, session-scoped client — used for the
-   *   actual signUp + insert/update so RLS applies as the calling user.
+   * @param supabase Cookie-based, session-scoped client — used for every
+   *   read/write so RLS applies as the calling user.
    * @param adminClient Service-role client — used ONLY to compensate
    *   (delete the auth user) if the `teachers` insert fails after signUp
-   *   already succeeded. Never used for the primary write path.
+   *   already succeeded. Omit it for read-only usage (`list`/`getById`),
+   *   which never touches it — callers shouldn't have to provision a
+   *   service-role key just to read public teacher data.
    */
   constructor(
     private readonly supabase: SupabaseClient,
-    private readonly adminClient: SupabaseClient,
+    private readonly adminClient?: SupabaseClient,
   ) {}
 
   async register(input: RegisterTeacherInput): Promise<Teacher> {
@@ -146,6 +148,16 @@ export class SupabaseTeacherRepository implements TeacherRepository {
   }
 
   private async compensateOrphanedAuthUser(userId: string, insertError: unknown): Promise<void> {
+    if (!this.adminClient) {
+      // register() is the only caller and always provides an adminClient —
+      // this branch only fires if that contract is violated.
+      logger.error("Cannot compensate orphaned auth user: no admin client provided", {
+        userId,
+        insertError,
+      });
+      return;
+    }
+
     const { error: deleteError } = await this.adminClient.auth.admin.deleteUser(userId);
     if (deleteError) {
       // Compensation itself failed — the email is now genuinely stuck.

@@ -39,6 +39,8 @@ Turn the home page (`/`) into the platform's public dashboard: a list of all reg
   4. Unit test the route handlers' status-code/body mapping (found, not-found, empty list, repository error) with a stubbed repository.
 - **Acceptance:** `npm run test` passes including new route tests; manual `curl localhost:3000/v1/teachers` and `curl localhost:3000/v1/teachers/{id}` (valid and invalid id) return the expected status/shape.
 - **Depends on:** 1.
+- **Status:** done
+- **Completed:** 2026-07-08
 
 ### 3. Home page as public teacher list
 - **Goal:** Replace the default `create-next-app` home page with the public dashboard: every teacher's name and instruments, name linking to their detail page.
@@ -48,6 +50,8 @@ Turn the home page (`/`) into the platform's public dashboard: a list of all reg
   3. Keep styling minimal and consistent with the existing Tailwind setup already in the repo; no new UI dependencies.
 - **Acceptance:** loading `/` in the browser against a real Supabase project shows all registered teachers with instruments; clicking a name navigates to `/teachers/{id}`; an empty database renders the empty state instead of an error.
 - **Depends on:** 1.
+- **Status:** done
+- **Completed:** 2026-07-08
 
 ### 4. Teacher detail page
 - **Goal:** Public `/teachers/[id]` page showing a teacher's full profile, with placeholders for fields not yet populated.
@@ -58,6 +62,8 @@ Turn the home page (`/`) into the platform's public dashboard: a list of all reg
   4. Keep styling minimal and consistent with the existing Tailwind setup; no new UI dependencies.
 - **Acceptance:** visiting `/teachers/{valid-id}` shows the teacher's populated fields plus placeholders for empty ones; visiting `/teachers/{invalid-id}` renders a 404.
 - **Depends on:** 1.
+- **Status:** done
+- **Completed:** 2026-07-08
 
 ## Open questions
 BLOCKS-EXECUTION:
