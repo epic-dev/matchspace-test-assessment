@@ -7,8 +7,9 @@ Status: draft
 Turn the home page (`/`) into the platform's public dashboard: a list of all registered teachers, showing each teacher's name and the instrument(s) they teach. Clicking a teacher's name navigates to a `/teachers/[id]` detail page showing their full public profile. This closes the "browse teachers" half of the spec (`GET /v1/teachers`, `GET /v1/teachers/{id}`) — no auth required, no booking/payment flow involved. "Done" means: a visitor lands on `/`, sees every registered teacher with their instruments, clicks a name, and lands on that teacher's detail page with their profile info (using placeholders for fields not yet populated at registration time).
 
 ## Assumptions
-- The `teachers` table in Supabase already has an `instruments` column, populated outside this codebase (per your confirmation) — the register flow and `Teacher` domain type just haven't been wired to read/write it yet. ⚠️ Actual column name/type (e.g. `instruments text[]` vs `instruments text`) is unconfirmed — Task 1 must inspect the live schema before writing the row mapping.
-- `bio`, `education`, `credentials`, and `online_availability` columns either don't exist yet or exist but are unpopulated (registration only ever collected name/email/password/hourly price). The detail page renders a full profile layout with visible placeholder/empty states for whichever of these come back empty or missing, rather than blocking on backfilling that data. ⚠️ Task 1 should confirm which of these columns actually exist; any that don't exist yet are treated as always-empty in the domain model (not queried) — see Open questions.
+- ⚠️ POST-HOC (superseding the note below): a concurrent `profile-completion` plan landed on `main` (commits `70a9f42`..`f11ab0a`) while this plan's Task 1 was first attempted. `main` now already has `bio`, `instruments`, `education`, `credentials`, `location`, `online_availability` on `Teacher`/`TeacherRow`, a working `mapRow`, and a `parseInstruments()` helper that treats the `instruments` column as **comma-separated text**, not a native array — confirmed by that plan's own execution, not guessed. Task 1 must build on top of this existing mapping instead of re-deriving the `Teacher` type or the instruments shape from scratch; it only needs to add `list()` and `getById()` to the port/adapter, reusing `mapRow`/`parseInstruments` as-is.
+- ~~The `teachers` table in Supabase already has an `instruments` column... unconfirmed~~ — resolved, see above.
+- ~~`bio`, `education`, `credentials`, and `online_availability` columns either don't exist yet...~~ — resolved: these columns exist and are already read/written by `register()`/`updateOwnProfile()` on `main`.
 - Server Components (`app/page.tsx`, `app/teachers/[id]/page.tsx`) call the `TeacherRepository` directly for rendering, rather than doing a self-fetch against the new `/v1/teachers` routes. The `GET /v1/teachers` and `GET /v1/teachers/{id}` route handlers are built to satisfy the spec's public API contract for external/API consumers, independent of how the pages render.
 - RLS on `teachers` currently permits anonymous reads (work_log notes RLS was disabled for this table) — list/detail queries run as the anonymous/public Supabase client, no service-role key needed. If this has changed, Task 1/2's acceptance checks will surface it.
 - No pagination, search, or filtering on the list for this pass — the full teacher list renders on one page. Reasonable given the assessment's scale and timeframe.
@@ -17,16 +18,17 @@ Turn the home page (`/`) into the platform's public dashboard: a list of all reg
 
 ## Tasks
 
-### 1. Repository: `list()` + `getById()`, full profile fields on `Teacher`
-- **Goal:** Extend the data-access layer so teacher data (including instruments and whatever profile fields actually exist) can be read for public display, without touching the write path (`register`).
+### 1. Repository: `list()` + `getById()`
+- **Goal:** Extend the data-access layer so teacher data can be read for public display, reusing the `Teacher` type/row-mapping that already exists on `main` (see Assumptions) — without touching the write path (`register`/`updateOwnProfile`).
 - **Steps:**
-  1. Inspect the live `teachers` table schema (Supabase dashboard or `supabase gen types`) to confirm which columns exist beyond `id`, `name`, `hourly_price` — specifically `instruments`, `bio`, `education`, `credentials`, `online_availability`.
-  2. Extend the `Teacher` domain type (`lib/teachers/repository.ts`) with the confirmed fields (e.g. `instruments: string[]`, `bio: string | null`, etc.), and add `list(): Promise<Teacher[]>` and `getById(id: string): Promise<Teacher | null>` to the `TeacherRepository` port.
-  3. Implement both methods on `SupabaseTeacherRepository`: `list()` selects all teacher rows ordered by name; `getById()` selects a single row by id, returning `null` on not-found (not a thrown error).
-  4. Update the existing row-mapping helper to include the new fields, defaulting missing/null values to `null` (scalars) or `[]` (instruments).
-  5. Unit test both methods against a mocked Supabase client: `list()` maps multiple rows correctly and handles an empty result set; `getById()` maps a found row and returns `null` for a missing one.
-- **Acceptance:** `npm run test` passes including new repository tests; `tsc --noEmit` passes; `register()`'s existing behavior and tests are unaffected.
+  1. Add `list(): Promise<Teacher[]>` and `getById(id: string): Promise<Teacher | null>` to the `TeacherRepository` port (`lib/teachers/repository.ts`). Do not change the existing `Teacher` type or add new fields — it already has everything needed.
+  2. Implement both methods on `SupabaseTeacherRepository`, reusing the existing `mapRow`/`parseInstruments` helpers unchanged: `list()` selects all teacher rows ordered by name; `getById()` selects a single row by id (e.g. `.maybeSingle()`), returning `null` on not-found rather than throwing.
+  3. Handle a malformed-UUID id passed to `getById()` (Postgres `22P02`) the same way as not-found — return `null`, not a thrown `RepositoryError` — since Task 2's route handler needs a clean 404 either way.
+  4. Unit test both methods against a mocked Supabase client: `list()` maps multiple rows correctly and handles an empty result set; `getById()` maps a found row, returns `null` for a missing row, and returns `null` for a malformed-id error.
+- **Acceptance:** `npm run test` passes including new repository tests; `tsc --noEmit` passes; `register()`/`updateOwnProfile()`'s existing behavior and tests are unaffected.
 - **Depends on:** none.
+- **Status:** done
+- **Completed:** 2026-07-08
 
 ### 2. `GET /v1/teachers` and `GET /v1/teachers/{id}` route handlers
 - **Goal:** Expose the spec's public read API for teacher listing and detail.

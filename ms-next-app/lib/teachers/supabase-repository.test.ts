@@ -229,3 +229,159 @@ describe("SupabaseTeacherRepository.updateOwnProfile", () => {
     );
   });
 });
+
+function createMockSupabaseForList(result: { data: unknown; error: unknown }) {
+  const order = vi.fn().mockResolvedValue(result);
+  const select = vi.fn().mockReturnValue({ order });
+  const from = vi.fn().mockReturnValue({ select });
+
+  return { from, select, order };
+}
+
+describe("SupabaseTeacherRepository.list", () => {
+  it("maps multiple rows, ordered by name", async () => {
+    const { from, order } = createMockSupabaseForList({
+      data: [
+        {
+          id: "user-1",
+          name: "Ada Lovelace",
+          hourly_price: 50,
+          bio: null,
+          instruments: "piano, violin",
+          education: null,
+          credentials: null,
+          location: null,
+          online_availability: null,
+        },
+        {
+          id: "user-2",
+          name: "Bo Diddley",
+          hourly_price: null,
+          bio: null,
+          instruments: null,
+          education: null,
+          credentials: null,
+          location: null,
+          online_availability: null,
+        },
+      ],
+      error: null,
+    });
+    const supabase = { from };
+    const repo = new SupabaseTeacherRepository(supabase as never, {} as never);
+
+    const teachers = await repo.list();
+
+    expect(from).toHaveBeenCalledWith("teachers");
+    expect(order).toHaveBeenCalledWith("name");
+    expect(teachers).toEqual([
+      {
+        id: "user-1",
+        name: "Ada Lovelace",
+        hourlyPrice: 50,
+        bio: null,
+        instruments: ["piano", "violin"],
+        education: null,
+        credentials: null,
+        location: null,
+        onlineAvailability: null,
+      },
+      {
+        id: "user-2",
+        name: "Bo Diddley",
+        hourlyPrice: null,
+        ...baseTeacher,
+      },
+    ]);
+  });
+
+  it("returns an empty array for an empty result set", async () => {
+    const { from } = createMockSupabaseForList({ data: [], error: null });
+    const supabase = { from };
+    const repo = new SupabaseTeacherRepository(supabase as never, {} as never);
+
+    await expect(repo.list()).resolves.toEqual([]);
+  });
+
+  it("throws RepositoryError on a query failure", async () => {
+    const { from } = createMockSupabaseForList({
+      data: null,
+      error: { message: "connection error", code: "08000" },
+    });
+    const supabase = { from };
+    const repo = new SupabaseTeacherRepository(supabase as never, {} as never);
+
+    await expect(repo.list()).rejects.toBeInstanceOf(RepositoryError);
+  });
+});
+
+function createMockSupabaseForGetById(result: { data: unknown; error: unknown }) {
+  const maybeSingle = vi.fn().mockResolvedValue(result);
+  const eq = vi.fn().mockReturnValue({ maybeSingle });
+  const select = vi.fn().mockReturnValue({ eq });
+  const from = vi.fn().mockReturnValue({ select });
+
+  return { from, select, eq, maybeSingle };
+}
+
+describe("SupabaseTeacherRepository.getById", () => {
+  it("maps a found row", async () => {
+    const { from, eq } = createMockSupabaseForGetById({
+      data: {
+        id: "user-1",
+        name: "Ada Lovelace",
+        hourly_price: 50,
+        bio: null,
+        instruments: null,
+        education: null,
+        credentials: null,
+        location: null,
+        online_availability: null,
+      },
+      error: null,
+    });
+    const supabase = { from };
+    const repo = new SupabaseTeacherRepository(supabase as never, {} as never);
+
+    const teacher = await repo.getById("user-1");
+
+    expect(from).toHaveBeenCalledWith("teachers");
+    expect(eq).toHaveBeenCalledWith("id", "user-1");
+    expect(teacher).toEqual({
+      id: "user-1",
+      name: "Ada Lovelace",
+      hourlyPrice: 50,
+      ...baseTeacher,
+    });
+  });
+
+  it("returns null for a missing row", async () => {
+    const { from } = createMockSupabaseForGetById({ data: null, error: null });
+    const supabase = { from };
+    const repo = new SupabaseTeacherRepository(supabase as never, {} as never);
+
+    await expect(repo.getById("missing")).resolves.toBeNull();
+  });
+
+  it("returns null for a malformed-id error instead of throwing", async () => {
+    const { from } = createMockSupabaseForGetById({
+      data: null,
+      error: { message: "invalid input syntax for type uuid", code: "22P02" },
+    });
+    const supabase = { from };
+    const repo = new SupabaseTeacherRepository(supabase as never, {} as never);
+
+    await expect(repo.getById("not-a-uuid")).resolves.toBeNull();
+  });
+
+  it("throws RepositoryError on an unrelated query failure", async () => {
+    const { from } = createMockSupabaseForGetById({
+      data: null,
+      error: { message: "permission denied for table teachers", code: "42501" },
+    });
+    const supabase = { from };
+    const repo = new SupabaseTeacherRepository(supabase as never, {} as never);
+
+    await expect(repo.getById("user-1")).rejects.toBeInstanceOf(RepositoryError);
+  });
+});

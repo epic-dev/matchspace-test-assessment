@@ -16,6 +16,9 @@ const POSTGRES_UNIQUE_VIOLATION = "23505";
 /** PostgREST "no rows found" code, returned by `.single()` when 0 rows match. */
 const POSTGREST_NO_ROWS = "PGRST116";
 
+/** Postgres "invalid text representation" code — e.g. a malformed UUID passed to `.eq("id", ...)`. */
+const POSTGRES_INVALID_INPUT = "22P02";
+
 /** GoTrue error codes seen for a duplicate-email signUp, across API versions. */
 const DUPLICATE_EMAIL_AUTH_CODES = new Set([
   "user_already_exists",
@@ -113,6 +116,35 @@ export class SupabaseTeacherRepository implements TeacherRepository {
     return mapRow(data as TeacherRow);
   }
 
+  async list(): Promise<Teacher[]> {
+    const { data, error } = await this.supabase.from("teachers").select().order("name");
+
+    if (error) {
+      throw new RepositoryError("Failed to list teachers", { cause: error });
+    }
+
+    return (data as TeacherRow[]).map(mapRow);
+  }
+
+  async getById(id: string): Promise<Teacher | null> {
+    const { data, error } = await this.supabase
+      .from("teachers")
+      .select()
+      .eq("id", id)
+      .maybeSingle();
+
+    if (error) {
+      if (isInvalidInput(error)) {
+        // A malformed id (e.g. not a UUID) can never match a row — treat
+        // it the same as not-found rather than a 500.
+        return null;
+      }
+      throw new RepositoryError("Failed to fetch teacher", { cause: error });
+    }
+
+    return data ? mapRow(data as TeacherRow) : null;
+  }
+
   private async compensateOrphanedAuthUser(userId: string, insertError: unknown): Promise<void> {
     const { error: deleteError } = await this.adminClient.auth.admin.deleteUser(userId);
     if (deleteError) {
@@ -140,6 +172,10 @@ function isUniqueViolation(error: { code?: string }): boolean {
 
 function isNoRowsFound(error: { code?: string }): boolean {
   return error.code === POSTGREST_NO_ROWS;
+}
+
+function isInvalidInput(error: { code?: string }): boolean {
+  return error.code === POSTGRES_INVALID_INPUT;
 }
 
 /**
