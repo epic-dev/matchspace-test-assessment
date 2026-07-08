@@ -19,9 +19,24 @@ implement anything.
 3. **Consult the spec** at the path referenced in `CLAUDE.md → ## Assessment spec`.
    Re-read the relevant section so the plan is grounded in what the assessment
    actually asks for — not what you assume.
-4. **Write the plan** to `plans/<feature-slug>.md` (create the folder if
+4. **Check for in-flight work across worktrees.** Run `git worktree list`. If
+   other worktrees exist, a parallel session or subagent may already be
+   implementing part of this feature. For any worktree that looks relevant
+   (branch name, recent commits), check its commits/diff against the base
+   branch (`git log`, `git diff <base>...<branch>`) before finalizing tasks —
+   do not just read the file tree of your own checkout and assume it's the
+   whole picture. Fold what you find into the plan:
+   - If a task is already done in another worktree, don't re-propose it —
+     note it in **Assumptions** instead (with which worktree/branch) so
+     execution picks up from there.
+   - If a task is partially done, scope the remaining task to the delta, not
+     the whole thing.
+   - If you can't tell whether in-progress work will land, land compatibly,
+     or conflict, say so as an ⚠️ assumption or a BLOCKS-EXECUTION open
+     question rather than silently planning around a guess.
+5. **Write the plan** to `plans/<feature-slug>.md` (create the folder if
    needed). Slug is kebab-case, derived from the feature name.
-5. **Summarize** in chat: 5-10 lines covering the plan skeleton plus any
+6. **Summarize** in chat: 5-10 lines covering the plan skeleton plus any
    assumptions I should validate. Then STOP.
 
 ## Plan file structure
@@ -73,7 +88,8 @@ The plan file must have these H2 sections in this exact order:
   integration layer). Otherwise, tests are part of the acceptance criteria for
   the implementing task — not a separate task.
 - Do NOT add tasks like "set up the project" if `CLAUDE.md` says the project is
-  already set up. Read state before proposing work.
+  already set up. Read state before proposing work — including state sitting
+  in other git worktrees (see Step 4), not just the current checkout.
 - Do NOT plan tasks that touch files or deps listed in
   `CLAUDE.md → ## Out of scope`. If a plan seems to require it, ASK ME instead
   of silently violating the constraint.
