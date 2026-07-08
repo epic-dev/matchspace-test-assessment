@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { DuplicateEmailError, RepositoryError } from "./errors";
+import { DuplicateEmailError, RepositoryError, TeacherNotFoundError } from "./errors";
 import { SupabaseTeacherRepository } from "./supabase-repository";
 
 type MockSupabase = {
@@ -43,6 +43,15 @@ function createMockAdminClient(overrides?: {
   return { auth: { admin: { deleteUser } } };
 }
 
+const baseTeacher = {
+  bio: null,
+  instruments: null,
+  education: null,
+  credentials: null,
+  location: null,
+  onlineAvailability: null,
+};
+
 const input = {
   name: "Ada Lovelace",
   email: "ada@example.com",
@@ -69,7 +78,12 @@ describe("SupabaseTeacherRepository.register", () => {
       name: input.name,
       hourly_price: input.hourlyPrice,
     });
-    expect(teacher).toEqual({ id: "user-1", name: "Ada Lovelace", hourlyPrice: 50 });
+    expect(teacher).toEqual({
+      id: "user-1",
+      name: "Ada Lovelace",
+      hourlyPrice: 50,
+      ...baseTeacher,
+    });
     expect(adminClient.auth.admin.deleteUser).not.toHaveBeenCalled();
   });
 
@@ -129,5 +143,89 @@ describe("SupabaseTeacherRepository.register", () => {
 
     await expect(repo.register(input)).rejects.toBeInstanceOf(RepositoryError);
     expect(adminClient.auth.admin.deleteUser).toHaveBeenCalledWith("user-1");
+  });
+});
+
+function createMockSupabaseForUpdate(updateResult: { data: unknown; error: unknown }) {
+  const single = vi.fn().mockResolvedValue(updateResult);
+  const select = vi.fn().mockReturnValue({ single });
+  const eq = vi.fn().mockReturnValue({ select });
+  const update = vi.fn().mockReturnValue({ eq });
+  const from = vi.fn().mockReturnValue({ update });
+
+  return { from, update, eq, select, single };
+}
+
+describe("SupabaseTeacherRepository.updateOwnProfile", () => {
+  it("updates only the provided fields, scoped to the caller's own row", async () => {
+    const { from, update, eq } = createMockSupabaseForUpdate({
+      data: {
+        id: "user-1",
+        name: "Ada Lovelace",
+        hourly_price: 75,
+        bio: "Piano teacher",
+        instruments: "piano, violin",
+        education: null,
+        credentials: null,
+        location: null,
+        online_availability: true,
+      },
+      error: null,
+    });
+    const supabase = { from };
+    const repo = new SupabaseTeacherRepository(supabase as never, {} as never);
+
+    const teacher = await repo.updateOwnProfile("user-1", {
+      bio: "Piano teacher",
+      instruments: ["piano", "violin"],
+      onlineAvailability: true,
+      hourlyPrice: 75,
+    });
+
+    expect(from).toHaveBeenCalledWith("teachers");
+    expect(update).toHaveBeenCalledWith({
+      bio: "Piano teacher",
+      instruments: "piano, violin",
+      online_availability: true,
+      hourly_price: 75,
+    });
+    expect(eq).toHaveBeenCalledWith("id", "user-1");
+    expect(teacher).toEqual({
+      id: "user-1",
+      name: "Ada Lovelace",
+      hourlyPrice: 75,
+      bio: "Piano teacher",
+      instruments: ["piano", "violin"],
+      education: null,
+      credentials: null,
+      location: null,
+      onlineAvailability: true,
+    });
+  });
+
+  it("maps a 'no rows found' update error to TeacherNotFoundError", async () => {
+    const { from } = createMockSupabaseForUpdate({
+      data: null,
+      error: { message: "Results contain 0 rows", code: "PGRST116" },
+    });
+    const supabase = { from };
+    const repo = new SupabaseTeacherRepository(supabase as never, {} as never);
+
+    await expect(repo.updateOwnProfile("missing-user", { bio: "Hi" })).rejects.toBeInstanceOf(
+      TeacherNotFoundError,
+    );
+  });
+
+  it("maps an unrelated update failure to RepositoryError", async () => {
+    const { from } = createMockSupabaseForUpdate({
+      data: null,
+      error: { message: "permission denied for table teachers", code: "42501" },
+    });
+    const supabase = { from };
+    const repo = new SupabaseTeacherRepository(supabase as never, {} as never);
+
+    await expect(repo.updateOwnProfile("user-1", { bio: "Hi" })).rejects.toBeInstanceOf(
+      RepositoryError,
+    );
   });
 });

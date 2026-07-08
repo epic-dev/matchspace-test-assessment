@@ -2,11 +2,19 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { logger } from "@/lib/logger";
 
-import { DuplicateEmailError, RepositoryError } from "./errors";
-import type { RegisterTeacherInput, Teacher, TeacherRepository } from "./repository";
+import { DuplicateEmailError, RepositoryError, TeacherNotFoundError } from "./errors";
+import type {
+  RegisterTeacherInput,
+  Teacher,
+  TeacherRepository,
+  UpdateTeacherInput,
+} from "./repository";
 
 /** Postgres unique_violation error code. */
 const POSTGRES_UNIQUE_VIOLATION = "23505";
+
+/** PostgREST "no rows found" code, returned by `.single()` when 0 rows match. */
+const POSTGREST_NO_ROWS = "PGRST116";
 
 /** GoTrue error codes seen for a duplicate-email signUp, across API versions. */
 const DUPLICATE_EMAIL_AUTH_CODES = new Set([
@@ -19,12 +27,18 @@ type TeacherRow = {
   id: string;
   name: string;
   hourly_price: number | null;
+  bio: string | null;
+  instruments: string | null;
+  education: string | null;
+  credentials: string | null;
+  location: string | null;
+  online_availability: boolean | null;
 };
 
 export class SupabaseTeacherRepository implements TeacherRepository {
   /**
    * @param supabase Cookie-based, session-scoped client — used for the
-   *   actual signUp + insert so RLS applies as the registering user.
+   *   actual signUp + insert/update so RLS applies as the calling user.
    * @param adminClient Service-role client — used ONLY to compensate
    *   (delete the auth user) if the `teachers` insert fails after signUp
    *   already succeeded. Never used for the primary write path.
@@ -79,6 +93,26 @@ export class SupabaseTeacherRepository implements TeacherRepository {
     return mapRow(teacherRow as TeacherRow);
   }
 
+  async updateOwnProfile(userId: string, input: UpdateTeacherInput): Promise<Teacher> {
+    const patch = buildUpdatePatch(input);
+
+    const { data, error } = await this.supabase
+      .from("teachers")
+      .update(patch)
+      .eq("id", userId)
+      .select()
+      .single();
+
+    if (error) {
+      if (isNoRowsFound(error)) {
+        throw new TeacherNotFoundError(userId);
+      }
+      throw new RepositoryError("Failed to update teacher profile", { cause: error });
+    }
+
+    return mapRow(data as TeacherRow);
+  }
+
   private async compensateOrphanedAuthUser(userId: string, insertError: unknown): Promise<void> {
     const { error: deleteError } = await this.adminClient.auth.admin.deleteUser(userId);
     if (deleteError) {
@@ -104,10 +138,52 @@ function isUniqueViolation(error: { code?: string }): boolean {
   return error.code === POSTGRES_UNIQUE_VIOLATION;
 }
 
+function isNoRowsFound(error: { code?: string }): boolean {
+  return error.code === POSTGREST_NO_ROWS;
+}
+
+/**
+ * Builds a partial update object containing only the fields present on
+ * `input`, mapped to their `teachers` column names. Domain `instruments`
+ * (a string array) is stored as comma-separated text, matching the
+ * simplest column shape available (no separate instruments table).
+ */
+function buildUpdatePatch(input: UpdateTeacherInput): Record<string, unknown> {
+  const patch: Record<string, unknown> = {};
+
+  if (input.name !== undefined) patch.name = input.name;
+  if (input.bio !== undefined) patch.bio = input.bio;
+  if (input.instruments !== undefined) patch.instruments = input.instruments.join(", ");
+  if (input.education !== undefined) patch.education = input.education;
+  if (input.credentials !== undefined) patch.credentials = input.credentials;
+  if (input.location !== undefined) patch.location = input.location;
+  if (input.onlineAvailability !== undefined) {
+    patch.online_availability = input.onlineAvailability;
+  }
+  if (input.hourlyPrice !== undefined) patch.hourly_price = input.hourlyPrice;
+
+  return patch;
+}
+
 function mapRow(row: TeacherRow): Teacher {
   return {
     id: row.id,
     name: row.name,
     hourlyPrice: row.hourly_price ?? null,
+    bio: row.bio ?? null,
+    instruments: parseInstruments(row.instruments),
+    education: row.education ?? null,
+    credentials: row.credentials ?? null,
+    location: row.location ?? null,
+    onlineAvailability: row.online_availability ?? null,
   };
+}
+
+function parseInstruments(value: string | null): string[] | null {
+  if (!value) return null;
+  const list = value
+    .split(",")
+    .map((instrument) => instrument.trim())
+    .filter(Boolean);
+  return list.length > 0 ? list : null;
 }
