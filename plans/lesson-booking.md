@@ -7,14 +7,16 @@ Status: draft
 Public users can browse teachers, view a teacher's detail page, and submit a
 booking request for a specific date/time. The request is rejected up front if
 it conflicts with a booking the teacher already has. This plan covers the
-full request flow end-to-end — browsing, selection, date/time entry,
+request flow from a known teacher's detail page — date/time entry,
 conflict-checked submission, and persistence — but stops at creating a
-`pending` booking row. Stripe checkout and payment-triggered confirmation
-(`POST /v1/checkout`) are explicitly out of scope and will be a follow-up
-plan. Done means: a student can go from the teacher list to a submitted
-booking request without touching Supabase directly, and a double-booked slot
-is rejected with a clear error instead of silently overwriting or double
-allocating a teacher's time.
+`pending` booking row. Teacher browsing/selection (a `/teachers` list page
+and the `GET /v1/teachers*` endpoints) was removed from this plan on review
+and is assumed to be delivered separately. Stripe checkout and
+payment-triggered confirmation (`POST /v1/checkout`) are explicitly out of
+scope and will be a follow-up plan. Done means: a student on a teacher's
+detail page can submit a booking request without touching Supabase directly,
+and a double-booked slot is rejected with a clear error instead of silently
+overwriting or double allocating a teacher's time.
 
 ## Assumptions
 - "Available" means *no existing booking overlapping the requested
@@ -38,43 +40,16 @@ allocating a teacher's time.
   that's wrong.
 - No auth is required to submit a booking (matches spec: "no student account
   required").
-- `GET /v1/teachers` (list) currently has **no route handler at all** —
-  `app/v1/teachers/route.ts` only exports `PATCH`. `GET /v1/teachers/{id}`
-  doesn't exist either. Both are prerequisites for "select a teacher" and are
-  built in Task 1, not assumed to pre-exist.
+- ⚠️ Teacher browsing/selection (`GET /v1/teachers`, `GET /v1/teachers/{id}`,
+  and any `/teachers` list UI) is out of scope for this plan — removed per
+  review. This plan now starts from "a teacher detail page needs a booking
+  form" and assumes teacher lookup by id is available. See the
+  BLOCKS-EXECUTION question below: `TeacherRepository` currently has no
+  `getById`, and nothing in this plan adds it unless Task 2 does.
 
 ## Tasks
 
-### 1. Teacher read endpoints: list + detail
-- **Goal:** expose `GET /v1/teachers` and `GET /v1/teachers/{id}` so the UI
-  (and the booking route's teacher-existence check) have something to call.
-- **Steps:**
-  - Add `list(): Promise<Teacher[]>` and `getById(id): Promise<Teacher | null>`
-    to `TeacherRepository` (`lib/teachers/repository.ts`) and implement both
-    on `SupabaseTeacherRepository`, reusing the existing `mapRow`.
-  - Add a `GET` export to `app/v1/teachers/route.ts` returning the full
-    teacher list as JSON (200).
-  - Add `app/v1/teachers/[id]/route.ts` with a `GET` export: 200 + teacher
-    JSON, or 404 if `getById` returns `null`.
-  - No auth required on either route (public data).
-- **Acceptance:** `curl /v1/teachers` returns an array; `curl
-  /v1/teachers/{validId}` returns 200 with that teacher; `curl
-  /v1/teachers/{bogusId}` returns 404.
-- **Depends on:** none.
-
-### 2. Public teacher list page (`/teachers`)
-- **Goal:** let a public user browse teachers and pick one.
-- **Steps:**
-  - Add `app/teachers/page.tsx` as a server component that calls the Task 1
-    list endpoint (or repository directly) and renders each teacher as a
-    card: name, instruments, hourly price, online/location.
-  - Each card links to `/teachers/[id]`.
-  - Handle the empty-list case (no teachers yet) with a simple message.
-- **Acceptance:** visiting `/teachers` in the browser shows the registered
-  test teacher(s) and each card navigates to the right detail page.
-- **Depends on:** Task 1.
-
-### 3. Bookings data model + repository
+### 1. Bookings data model + repository
 - **Goal:** a place to persist booking requests, plus the conflict-check
   logic as a unit-testable pure function.
 - **Steps:**
@@ -98,14 +73,17 @@ allocating a teacher's time.
   above; schema rejects missing `studentName`/`studentEmail`/invalid email.
 - **Depends on:** none.
 
-### 4. `POST /v1/booking` route
+### 2. `POST /v1/booking` route
 - **Goal:** the API endpoint that validates input, checks the teacher
   exists, checks availability, and creates the booking.
 - **Steps:**
   - Add `app/v1/booking/route.ts`: parse JSON, validate with
     `booking-schema.ts`, 400 on failure (mirroring the existing
     `updateTeacherSchema` route's error shape).
-  - Look up the teacher via Task 1's `getById`; 404 if it doesn't exist.
+  - Look up the teacher via `TeacherRepository.getById` (⚠️ doesn't exist yet
+    — add it here, reusing the existing `mapRow` in
+    `SupabaseTeacherRepository`, unless it's already been added elsewhere by
+    the time this task starts); 404 if it doesn't exist.
   - Call `hasConflict`; if true, return 409 with a clear error message
     (e.g. "That time is no longer available").
   - On success, `create` the booking with `status: 'pending'` and return
@@ -115,14 +93,15 @@ allocating a teacher's time.
 - **Acceptance:** manual `curl` cases — valid booking → 201; unknown
   teacherId → 404; conflicting time → 409; malformed body → 400 with
   `fieldErrors`.
-- **Depends on:** Task 1 (teacher lookup), Task 3 (repository + schema).
+- **Depends on:** Task 1 (repository + schema).
 
-### 5. Booking form on the teacher detail page
+### 3. Booking form on the teacher detail page
 - **Goal:** the actual "select a teacher, enter date/time" user flow.
 - **Steps:**
   - Add `app/teachers/[id]/page.tsx`: server component fetching the teacher
-    via Task 1 and rendering profile details (bio, instruments, credentials,
-    hourly price, location/online) plus a `BookingForm` client component.
+    via `TeacherRepository.getById` (from Task 2) and rendering profile
+    details (bio, instruments, credentials, hourly price, location/online)
+    plus a `BookingForm` client component.
   - `BookingForm` collects: date/time, hours (default 1, editable),
     location or online toggle (mirroring the teacher's own
     location/onlineAvailability as the default), student name, email,
@@ -133,12 +112,23 @@ allocating a teacher's time.
   - Client-side validation reuses `booking-schema.ts` (same pattern as
     `update-schema.ts` being shared between the `/profile` form and the
     `PATCH` route).
-- **Acceptance:** in the browser — pick a teacher from `/teachers`, submit a
+- **Acceptance:** in the browser — navigate directly to `/teachers/{id}`
+  (no `/teachers` list page exists in this plan to link from), submit a
   valid booking, see the success state; submit the same slot again and see
   the 409 error surfaced in the form.
-- **Depends on:** Task 2 (detail page shell), Task 4 (booking endpoint).
+- **Depends on:** Task 2 (booking endpoint + teacher lookup).
 
 ## Open questions
+- BLOCKS-EXECUTION: `TeacherRepository` has no `getById` today (`register` and
+  `updateOwnProfile` are the only methods) and no `GET /v1/teachers/{id}`
+  route exists. Tasks 1 and 2, which would have built these, were removed
+  from this plan. Is that lookup being added by a separate effort before
+  Task 2 executes, or should Task 2's scope explicitly include adding
+  `getById`? (Task 2's steps above assume the latter as a fallback, but this
+  should be confirmed rather than left implicit.)
+- BLOCKS-EXECUTION: with no `/teachers` list page, how does a student reach
+  `/teachers/{id}` at all? Fine for manual testing in this plan, but flagging
+  in case the real user flow needs a link into this page from somewhere.
 - BLOCKS-EXECUTION: is hand-creating the `bookings` table via the Supabase
   SQL editor actually the right call, or should this plan add a migrations
   folder/file now that a second table is being introduced? (Assumed: follow
@@ -157,20 +147,18 @@ allocating a teacher's time.
   slot before either insert lands (check-then-insert, not atomic). Mitigation:
   acceptable for a same-day MVP with low concurrency; a unique constraint or
   transaction could close this gap later if it matters.
-- Hand-created table schema (Task 3) could drift from what the repository
+- Hand-created table schema (Task 1) could drift from what the repository
   code expects since there's no migration file enforcing it. Mitigation: the
   SQL is documented directly in the task/PR, and the Supabase integration
   tests (matching the existing `supabase-repository.test.ts` pattern) will
   fail loudly against a real project if the schema is wrong.
 - Scope creep into the payment step is easy to slide into since "booking" and
-  "checkout" feel like one feature. Mitigation: Task 4's acceptance criteria
+  "checkout" feel like one feature. Mitigation: Task 2's acceptance criteria
   explicitly stop at `status: 'pending'` with no Stripe call.
 
 ## Definition of done
-- `GET /v1/teachers` and `GET /v1/teachers/{id}` are implemented and return
-  real data.
-- `/teachers` and `/teachers/[id]` pages exist and are reachable in the
-  browser.
+- `/teachers/[id]` page exists and is reachable in the browser (directly by
+  URL — no `/teachers` list page in this plan).
 - `POST /v1/booking` validates input, enforces the no-conflict rule, and
   persists a `pending` booking.
 - The booking form on the teacher detail page completes the flow: pick
