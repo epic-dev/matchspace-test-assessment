@@ -63,6 +63,7 @@ CONSTRAINTS
     - run `/executor` agent which looks at the plan generated and writes the code
     - manually review each step (still)
     - run `/reviewer` agent to review the latest changes in the working tree
+    - merge to main branch
 
 #### notes 
 - [!] The platform users are teachers. Students have no their own accounts, the platform is public, perhaps it makes sense to consider some anti-spam measures.
@@ -77,3 +78,6 @@ CONSTRAINTS
 - email confirmation on registeration step
 - instruments table. Ideally to store them in the separate table
 - production-ready Logger
+- db transactions, assuming that everything saved successfully
+- branching strategy
+- pr-creator, last minute update: it turns out could take a time
