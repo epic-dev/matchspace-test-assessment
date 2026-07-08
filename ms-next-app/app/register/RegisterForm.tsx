@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useId, useState, type FormEvent } from "react";
 
 import { registerSchema, type RegisterInput } from "@/lib/teachers/register-schema";
@@ -21,28 +22,16 @@ const initialValues: FormValues = {
 };
 
 export function RegisterForm() {
+  const router = useRouter();
   const [values, setValues] = useState<FormValues>(initialValues);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
 
   const nameId = useId();
   const emailId = useId();
   const passwordId = useId();
   const hourlyPriceId = useId();
-
-  if (success) {
-    return (
-      <p
-        role="status"
-        className="mt-6 rounded-md border border-green-600/20 bg-green-50 p-4 text-sm text-green-800 dark:border-green-500/30 dark:bg-green-950 dark:text-green-300"
-      >
-        You&apos;re registered. You can now sign in and finish setting up your
-        profile (bio, instruments, availability).
-      </p>
-    );
-  }
 
   function updateField(field: keyof FormValues) {
     return (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -79,7 +68,7 @@ export function RegisterForm() {
       });
 
       if (response.status === 201) {
-        setSuccess(true);
+        router.push("/profile");
         return;
       }
 

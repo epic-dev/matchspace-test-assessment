@@ -53,6 +53,8 @@ Today `POST /v1/register` collects only `name`, `email`, `password`, and optiona
   3. Keep existing 400/409/generic-error handling on the registration form unchanged.
 - **Acceptance:** manually registering redirects the browser to `/profile` immediately after a 201 response; failed registrations (400/409) still show inline errors and do not redirect.
 - **Depends on:** none (independent of Tasks 1-2; can ship in parallel, but functionally only makes sense once `/profile` exists — see Task 4).
+- **Status:** done
+- **Completed:** 2026-07-08
 
 ### 4. `/profile` completion page + form
 - **Goal:** A page at `/profile` where a newly-registered (or returning, incomplete) teacher fills in bio, instruments, education/credentials, and lesson location/online availability, and submits via `PATCH /v1/teachers`.
