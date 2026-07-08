@@ -48,7 +48,6 @@ const baseTeacher = {
   instruments: null,
   education: null,
   credentials: null,
-  location: null,
   onlineAvailability: null,
 };
 
@@ -198,7 +197,6 @@ describe("SupabaseTeacherRepository.updateOwnProfile", () => {
       instruments: ["piano", "violin"],
       education: null,
       credentials: null,
-      location: null,
       onlineAvailability: true,
     });
   });
@@ -283,7 +281,6 @@ describe("SupabaseTeacherRepository.list", () => {
         instruments: ["piano", "violin"],
         education: null,
         credentials: null,
-        location: null,
         onlineAvailability: null,
       },
       {

@@ -98,15 +98,6 @@ export default async function TeacherDetailPage({ params }: PageProps) {
 
           <div>
             <dt className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
-              Lesson location
-            </dt>
-            <dd className="mt-1 text-black dark:text-zinc-50">
-              {teacher.location || NOT_PROVIDED}
-            </dd>
-          </div>
-
-          <div>
-            <dt className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
               Hourly price
             </dt>
             <dd className="mt-1 text-black dark:text-zinc-50">{hourlyPriceText}</dd>
