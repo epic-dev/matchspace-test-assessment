@@ -6,7 +6,6 @@ export type Teacher = {
   instruments: string[] | null;
   education: string | null;
   credentials: string | null;
-  location: string | null;
   onlineAvailability: boolean | null;
   hourlyPrice: number | null;
 };

@@ -192,7 +192,6 @@ function buildUpdatePatch(input: UpdateTeacherInput): Record<string, unknown> {
   if (input.instruments !== undefined) patch.instruments = input.instruments.join(", ");
   if (input.education !== undefined) patch.education = input.education;
   if (input.credentials !== undefined) patch.credentials = input.credentials;
-  if (input.location !== undefined) patch.location = input.location;
   if (input.onlineAvailability !== undefined) {
     patch.online_availability = input.onlineAvailability;
   }
@@ -210,7 +209,6 @@ function mapRow(row: TeacherRow): Teacher {
     instruments: parseInstruments(row.instruments),
     education: row.education ?? null,
     credentials: row.credentials ?? null,
-    location: row.location ?? null,
     onlineAvailability: row.online_availability ?? null,
   };
 }
