@@ -74,6 +74,11 @@ POST /v1/booking       # creates booking request
         message?,
     }
 POST /v1/checkout      # creates a payment intention (Stripe)
+    body: {
+        mode: 'payment',
+        success_url,
+        line_items,
+    }
 ```
 
 ### Database
