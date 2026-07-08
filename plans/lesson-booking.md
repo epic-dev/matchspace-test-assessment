@@ -53,18 +53,12 @@ overwriting or double allocating a teacher's time.
 - **Goal:** a place to persist booking requests, plus the conflict-check
   logic as a unit-testable pure function.
 - **Steps:**
-  - Document and (by hand, per the assumption above) create the `bookings`
-    table: `id, teacher_id, date_time, hours, location, is_online,
-    student_name, student_email, message, status, created_at`.
-  - Add `lib/bookings/repository.ts`: `Booking` domain type,
-    `CreateBookingInput`, and a `BookingRepository` port with
-    `create(input)` and `hasConflict(teacherId, dateTime, hours)`.
-  - Add `lib/bookings/supabase-repository.ts` implementing the port.
-    `hasConflict` queries existing bookings for the teacher and checks
-    interval overlap against `[dateTime, dateTime + hours)`.
+  - Document. The `bookings` table exists with columns: `id, teacher_id, date_time, hours, location, is_online, student_name, student_email, message, status, created_at`.
+  - Add `lib/bookings/repository.ts`: `Booking` domain type, `CreateBookingInput`, and a `BookingRepository` port with `create(input)` and `hasConflict(teacherId, dateTime, hours)`.
+  - Add `lib/bookings/supabase-repository.ts` implementing the port. `hasConflict` queries existing bookings for the teacher and checks interval overlap against `[dateTime, dateTime + hours)`.
   - Add `lib/bookings/booking-schema.ts` (zod): `teacherId` (uuid),
-    `dateTime` (ISO datetime string), `hours` (number, default 1),
-    `location`/`isOnline` (optional), `studentName`, `studentEmail` (email),
+    `dateTime` (ISO datetime string), `hours` (number, optional, default 1),
+    `location`/`isOnline` (both optional, but one of them should be set), `studentName`, `studentEmail` (email),
     `message` (optional).
   - Unit test the overlap logic in isolation (e.g. a pure `intervalsOverlap`
     helper) covering: no overlap, exact match, partial overlap, adjacent
@@ -77,19 +71,11 @@ overwriting or double allocating a teacher's time.
 - **Goal:** the API endpoint that validates input, checks the teacher
   exists, checks availability, and creates the booking.
 - **Steps:**
-  - Add `app/v1/booking/route.ts`: parse JSON, validate with
-    `booking-schema.ts`, 400 on failure (mirroring the existing
-    `updateTeacherSchema` route's error shape).
-  - Look up the teacher via `TeacherRepository.getById` (⚠️ doesn't exist yet
-    — add it here, reusing the existing `mapRow` in
-    `SupabaseTeacherRepository`, unless it's already been added elsewhere by
-    the time this task starts); 404 if it doesn't exist.
-  - Call `hasConflict`; if true, return 409 with a clear error message
-    (e.g. "That time is no longer available").
-  - On success, `create` the booking with `status: 'pending'` and return
-    201 + the created booking.
-  - Log unexpected repository errors the same way `PATCH /v1/teachers`
-    does (generic 500 to the client, details server-side).
+  - Add `app/v1/booking/route.ts`: parse JSON, validate with `booking-schema.ts`, 400 on failure (mirroring the existing `updateTeacherSchema` route's error shape).
+  - Look up the teacher via `TeacherRepository.getById`; 404 if it doesn't exist.
+  - Call `hasConflict`; if true, return 409 with a clear error message (e.g. "That time is no longer available").
+  - On success, `create` the booking with `status: 'pending'` and return 201 + the created booking.
+  - Log unexpected repository errors the same way `PATCH /v1/teachers` does (generic 500 to the client, details server-side).
 - **Acceptance:** manual `curl` cases — valid booking → 201; unknown
   teacherId → 404; conflicting time → 409; malformed body → 400 with
   `fieldErrors`.
@@ -98,41 +84,16 @@ overwriting or double allocating a teacher's time.
 ### 3. Booking form on the teacher detail page
 - **Goal:** the actual "select a teacher, enter date/time" user flow.
 - **Steps:**
-  - Add `app/teachers/[id]/page.tsx`: server component fetching the teacher
-    via `TeacherRepository.getById` (from Task 2) and rendering profile
-    details (bio, instruments, credentials, hourly price, location/online)
-    plus a `BookingForm` client component.
+  - Add a `BookingForm` client component to the `app/teachers/[id]/page.tsx`.
   - `BookingForm` collects: date/time, hours (default 1, editable),
-    location or online toggle (mirroring the teacher's own
-    location/onlineAvailability as the default), student name, email,
-    optional message.
-  - On submit, POST to `/v1/booking`; on 409 show the "not available" error
-    inline and let the user pick a different time; on 201 show a success
-    state ("booking request sent — pending confirmation").
-  - Client-side validation reuses `booking-schema.ts` (same pattern as
-    `update-schema.ts` being shared between the `/profile` form and the
+    location or online toggle (mirroring the teacher's own location/onlineAvailability as the default), student name, email, optional message.
+  - On submit, POST to `/v1/booking`; on 409 show the "not available" error inline and let the user pick a different time; on 201 show a success state ("booking request sent — pending confirmation").
+  - Client-side validation reuses `booking-schema.ts` (same pattern as `update-schema.ts` being shared between the `/profile` form and the
     `PATCH` route).
-- **Acceptance:** in the browser — navigate directly to `/teachers/{id}`
-  (no `/teachers` list page exists in this plan to link from), submit a
-  valid booking, see the success state; submit the same slot again and see
-  the 409 error surfaced in the form.
+- **Acceptance:** I'll do it by myself.
 - **Depends on:** Task 2 (booking endpoint + teacher lookup).
 
 ## Open questions
-- BLOCKS-EXECUTION: `TeacherRepository` has no `getById` today (`register` and
-  `updateOwnProfile` are the only methods) and no `GET /v1/teachers/{id}`
-  route exists. Tasks 1 and 2, which would have built these, were removed
-  from this plan. Is that lookup being added by a separate effort before
-  Task 2 executes, or should Task 2's scope explicitly include adding
-  `getById`? (Task 2's steps above assume the latter as a fallback, but this
-  should be confirmed rather than left implicit.)
-- BLOCKS-EXECUTION: with no `/teachers` list page, how does a student reach
-  `/teachers/{id}` at all? Fine for manual testing in this plan, but flagging
-  in case the real user flow needs a link into this page from somewhere.
-- BLOCKS-EXECUTION: is hand-creating the `bookings` table via the Supabase
-  SQL editor actually the right call, or should this plan add a migrations
-  folder/file now that a second table is being introduced? (Assumed: follow
-  existing `teachers`-table precedent, no migration file.)
 - INFORMATIONAL: should the booking form default the location/online choice
   from the teacher's profile, or always ask the student to choose? (Assumed:
   default from profile, but let the student override if the teacher supports
@@ -165,3 +126,8 @@ overwriting or double allocating a teacher's time.
   teacher → enter date/time and student details → submit → see success or a
   clear "not available" error.
 - New unit tests (overlap logic, schema validation) pass under `vitest run`.
+
+
+## My implementation notes
+- teacher has no location, just keep this field in the booking form as it is
+- no need to take into acoount users timezone
