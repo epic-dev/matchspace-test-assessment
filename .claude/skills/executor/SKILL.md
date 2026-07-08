@@ -11,9 +11,14 @@ This skill is a thin wrapper around the `executor` subagent (`.claude/agents/exe
 
 1. Parse the invocation arguments for a plan file path and a task selector (`task N`, `next`, or `tasks A-B`).
    - If either is missing or unclear, ask the user before dispatching — the subagent cannot ask on your behalf, and a wrong guess wastes its run.
-2. Call the `Agent` tool with `subagent_type: "executor"`. The prompt you pass must contain the plan file path and the task selector verbatim, plus nothing else the subagent doesn't already read for itself (`CLAUDE.md`, the plan) — it has no access to this conversation's history.
-3. Run in the foreground (`run_in_background: false`) when the user is waiting on the result to decide next steps (the common case, single task). Background is fine only for a batch range the user explicitly isn't blocking on.
-4. Relay the subagent's return summary to the user verbatim — do not paraphrase away the `BLOCKED:` prefix, the Verification lines, or the Files changed list. The user needs those exactly as returned to decide what's next.
+2. Check the plan file for a trailing `## MY IMPLEMENTATION NOTES` section — free-form notes the user appends themselves after plan approval, outside the planner's structured format. If it's present:
+   - Read it and identify anything relevant to the task(s) about to be dispatched.
+   - Ask the user to verify the task as written in the plan still matches those notes before you dispatch — the subagent runs in a fresh context and only sees what you put in the dispatch prompt, so this is the only point where a stale or conflicting note gets caught instead of silently ignored.
+   - If the user confirms an update is needed, fold it into the plan (or the dispatch prompt) before proceeding rather than dispatching against a plan you know is out of date.
+   - If the section is absent, skip this step silently — it's optional, not every plan will have one.
+3. Call the `Agent` tool with `subagent_type: "executor"`. The prompt you pass must contain the plan file path and the task selector verbatim, plus nothing else the subagent doesn't already read for itself (`CLAUDE.md`, the plan) — it has no access to this conversation's history.
+4. Run in the foreground (`run_in_background: false`) when the user is waiting on the result to decide next steps (the common case, single task). Background is fine only for a batch range the user explicitly isn't blocking on.
+5. Relay the subagent's return summary to the user verbatim — do not paraphrase away the `BLOCKED:` prefix, the Verification lines, or the Files changed list. The user needs those exactly as returned to decide what's next.
 
 ## When NOT to use this skill
 
