@@ -2,51 +2,44 @@
 
 import { useState } from "react";
 
+import { startCheckout } from "@/lib/bookings/checkout-client";
+
 type ProceedToCheckoutButtonProps = {
   bookingId: string;
+  /**
+   * Seeds the error shown before any click — e.g. `BookingForm`'s
+   * auto-redirect failure reason. Once the button is clicked, its own
+   * submit/error state takes over and supersedes this, so a failed retry
+   * never stacks a second error message underneath the seeded one.
+   */
+  initialError?: string | null;
 };
 
 /**
- * Standalone, reusable trigger for `POST /v1/checkout`. Not wired into any
- * page yet — the booking-confirmation UI (built in a separate session) will
- * render this once a booking exists. On success, redirects the whole page to
+ * Reusable trigger for `POST /v1/checkout`, used both as the manual retry
+ * action (when `BookingForm`'s auto-redirect fails) and standalone wherever
+ * a booking already exists. On success, redirects the whole page to
  * Stripe's hosted Checkout page; on failure, shows an inline error instead of
  * throwing.
  */
-export function ProceedToCheckoutButton({ bookingId }: ProceedToCheckoutButtonProps) {
+export function ProceedToCheckoutButton({
+  bookingId,
+  initialError = null,
+}: ProceedToCheckoutButtonProps) {
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(initialError);
 
   async function handleClick() {
     setError(null);
     setSubmitting(true);
 
-    try {
-      const response = await fetch("/v1/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bookingId }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json().catch(() => null);
-        setError(data?.error ?? "Something went wrong. Please try again.");
-        setSubmitting(false);
-        return;
-      }
-
-      const data = await response.json().catch(() => null);
-      if (!data?.url) {
-        setError("Something went wrong. Please try again.");
-        setSubmitting(false);
-        return;
-      }
-
-      window.location.href = data.url;
-    } catch {
-      setError("Something went wrong. Please try again.");
+    const result = await startCheckout(bookingId);
+    if (!result.ok) {
+      setError(result.error);
       setSubmitting(false);
     }
+    // On success, startCheckout has already navigated the browser away —
+    // no further state update is needed.
   }
 
   return (

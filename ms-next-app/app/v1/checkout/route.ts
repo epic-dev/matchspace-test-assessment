@@ -56,24 +56,31 @@ export async function POST(request: Request) {
     const origin = new URL(request.url).origin;
 
     const stripe = getStripeClient();
-    const session = await stripe.checkout.sessions.create({
-      mode: "payment",
-      line_items: [
-        {
-          price_data: {
-            currency: "eur",
-            unit_amount: unitAmount,
-            product_data: {
-              name: `Lesson with ${teacher.name} (${booking.hours}h)`,
+    const session = await stripe.checkout.sessions.create(
+      {
+        mode: "payment",
+        line_items: [
+          {
+            price_data: {
+              currency: "eur",
+              unit_amount: unitAmount,
+              product_data: {
+                name: `Lesson with ${teacher.name} (${booking.hours}h)`,
+              },
             },
+            quantity: 1,
           },
-          quantity: 1,
-        },
-      ],
-      success_url: `${origin}/booking/success`,
-      cancel_url: `${origin}/booking/cancel`,
-      metadata: { bookingId: booking.id },
-    });
+        ],
+        success_url: `${origin}/booking/success`,
+        cancel_url: `${origin}/booking/cancel`,
+        metadata: { bookingId: booking.id },
+      },
+      // Deterministic, booking-scoped idempotency key: a retried checkout
+      // call for the same booking (auto-trigger followed by a manual retry,
+      // or any other duplicate) reuses the same Stripe Checkout Session
+      // instead of minting a second live one.
+      { idempotencyKey: `checkout-session:${booking.id}` },
+    );
 
     await bookingRepository.attachStripeSession(booking.id, session.id);
 
