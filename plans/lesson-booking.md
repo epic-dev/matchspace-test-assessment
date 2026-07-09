@@ -66,6 +66,8 @@ overwriting or double allocating a teacher's time.
 - **Acceptance:** `vitest run` passes new tests covering the overlap cases
   above; schema rejects missing `studentName`/`studentEmail`/invalid email.
 - **Depends on:** none.
+- **Status:** done
+- **Completed:** 2026-07-09
 
 ### 2. `POST /v1/booking` route
 - **Goal:** the API endpoint that validates input, checks the teacher
