@@ -1,6 +1,6 @@
 ---
 name: planner
-description: Use when starting development on a new feature, task, or spec section — BEFORE any code is written. Produces a small, reviewable task breakdown at `plans/<feature-slug>.md` and stops. Never writes code, never implements, never opens PRs.
+description: Use when starting development on a new feature, task, or spec section — BEFORE any code is written. For underspecified or multi-approach work, first invokes superpowers:brainstorming for design exploration and approval (redirected to hand back here instead of writing-plans). Produces a small, reviewable task breakdown at `plans/<feature-slug>.md` and stops. Never writes code, never implements, never opens PRs.
 ---
 
 # Planner
@@ -13,13 +13,37 @@ implement anything.
 
 1. **Read `CLAUDE.md`** at the repo root to establish project context. If it
    does not exist, ASK me to run the init prompt first — do not proceed.
-2. **Ask me what to plan** if I haven't told you already. If the feature
-   description is thin, batch 2-4 targeted clarifying questions in a SINGLE
-   message before writing the plan. Do NOT drip. Do NOT invent details.
-3. **Consult the spec** at the path referenced in `CLAUDE.md → ## Assessment spec`.
+2. **Decide whether this needs design exploration first.** Invoke the
+   `superpowers:brainstorming` skill before any planning when the feature is
+   underspecified or involves a real decision: data model shape, API
+   contract, UX flow, or more than one reasonable approach. Skip straight to
+   step 3 only for small, unambiguous, single-approach work (e.g. "add a
+   loading spinner to the booking button") where there's nothing to design.
+   When in doubt, brainstorm — a short brainstorm for a simple feature costs
+   little; skipping it on a feature that turns out to be ambiguous costs a
+   redone plan.
+
+   When you invoke brainstorming, say so explicitly and hand it this
+   override in the same message: **its terminal step ("invoke writing-plans
+   skill") does not apply in this project — once the design is approved (and
+   the spec doc, if any, is written and self-reviewed), it should hand
+   control back to this `planner` skill instead.** This project's `planner`
+   is the writing-plans equivalent here; it produces `plans/<slug>.md`, not
+   the generic writing-plans output.
+
+   Once brainstorming hands back control (or was skipped), treat its output
+   as already answering "what to plan" and "what are the constraints" — don't
+   re-ask questions it already resolved. If it produced a spec doc, note its
+   path in the plan's **Summary** so a reviewer can trace task breakdown back
+   to the approved design.
+3. **Ask me what to plan** if I haven't told you already and brainstorming
+   was skipped. If the feature description is thin, batch 2-4 targeted
+   clarifying questions in a SINGLE message before writing the plan. Do NOT
+   drip. Do NOT invent details.
+4. **Consult the spec** at the path referenced in `CLAUDE.md → ## Assessment spec`.
    Re-read the relevant section so the plan is grounded in what the assessment
    actually asks for — not what you assume.
-4. **Check for in-flight work across worktrees.** Run `git worktree list`. If
+5. **Check for in-flight work across worktrees.** Run `git worktree list`. If
    other worktrees exist, a parallel session or subagent may already be
    implementing part of this feature. For any worktree that looks relevant
    (branch name, recent commits), check its commits/diff against the base
@@ -34,9 +58,9 @@ implement anything.
    - If you can't tell whether in-progress work will land, land compatibly,
      or conflict, say so as an ⚠️ assumption or a BLOCKS-EXECUTION open
      question rather than silently planning around a guess.
-5. **Write the plan** to `plans/<feature-slug>.md` (create the folder if
+6. **Write the plan** to `plans/<feature-slug>.md` (create the folder if
    needed). Slug is kebab-case, derived from the feature name.
-6. **Summarize** in chat: 5-10 lines covering the plan skeleton plus any
+7. **Summarize** in chat: 5-10 lines covering the plan skeleton plus any
    assumptions I should validate. Then STOP.
 
 ## Plan file structure
@@ -50,6 +74,8 @@ The plan file must have these H2 sections in this exact order:
 
     ## Summary
     One paragraph: what feature, what value, what the "done" state looks like.
+    If a brainstorming design/spec doc was produced for this feature, link it
+    here (path under `docs/superpowers/specs/`) — omit the line if none exists.
 
     ## Assumptions
     Bullet list. Things I'm treating as true. Flag any I'm uncertain about with ⚠️.
@@ -89,7 +115,7 @@ The plan file must have these H2 sections in this exact order:
   the implementing task — not a separate task.
 - Do NOT add tasks like "set up the project" if `CLAUDE.md` says the project is
   already set up. Read state before proposing work — including state sitting
-  in other git worktrees (see Step 4), not just the current checkout.
+  in other git worktrees (see Step 5), not just the current checkout.
 - Do NOT plan tasks that touch files or deps listed in
   `CLAUDE.md → ## Out of scope`. If a plan seems to require it, ASK ME instead
   of silently violating the constraint.
