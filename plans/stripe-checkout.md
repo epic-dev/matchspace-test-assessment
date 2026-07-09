@@ -17,6 +17,7 @@ Add Stripe (test mode) payment to the booking flow: once a booking exists, the s
 - No student account/auth on this path (per spec) — the checkout route is a public endpoint identified by `bookingId`, not a session.
 - Currency: EUR.
 - ⚠️ POST-HOC (Task 1, 2026-07-09): per explicit user instruction during execution, skipped writing the Vitest unit test for `lib/stripe/client.ts` (and unit testing generally for subsequent tasks in this pass). `tsc --noEmit` and the existing test suite (`npm run test`) were still run and pass; no regression introduced. Flagging since the plan's task 1/4/5 and "Definition of done" call for new tests per task — that bar was explicitly waived for this execution pass, not silently dropped.
+- ⚠️ POST-HOC (Task 2, 2026-07-09): same "skip unit testing" instruction applied here too — no test file was added for `getById`/`attachStripeSession`/`markPaid` (there was also no pre-existing `lib/bookings/supabase-repository.test.ts` to extend; `create`/`hasConflict` are untested by any file in the repo, contrary to this plan's step 4 wording). Verified instead via `npx tsc --noEmit` (clean) and `npx vitest run` (45/45 existing tests still pass, unaffected). The DDL (`alter table bookings add column stripe_session_id text; alter table bookings add column payment_status text not null default 'pending';`) is documented in the schema comment at the top of `lib/bookings/supabase-repository.ts` but has NOT been run against the real Supabase project — needs to be applied by hand before Task 3/4 can work against a live booking. `getById`'s not-found/malformed-id convention mirrors `SupabaseTeacherRepository.getById` exactly (`.maybeSingle()`, return `null` on no row, return `null` on Postgres code `22P02`, otherwise throw `RepositoryError`). `markPaid`/`attachStripeSession` use a bare `.update().eq(id)` (no `.select().single()`), so a redelivered/no-op update never errors — this is what makes `markPaid` idempotent per the task's requirement.
 
 ## Tasks
 
@@ -41,6 +42,8 @@ Add Stripe (test mode) payment to the booking flow: once a booking exists, the s
   4. Unit test the three new repository methods against a mocked Supabase client, alongside the existing `create`/`hasConflict` tests.
 - **Acceptance:** `npm run test` passes; `tsc --noEmit` passes; existing `create`/`hasConflict` behavior and tests are unaffected.
 - **Depends on:** 1 (only for shared conventions; can run independently).
+- **Status:** done
+- **Completed:** 2026-07-09
 
 ### 3. `POST /v1/checkout` route handler
 - **Goal:** Given a `bookingId`, create a Stripe Checkout Session for the correct amount and return its URL for the client to redirect to.
