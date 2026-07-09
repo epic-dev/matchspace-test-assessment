@@ -118,13 +118,27 @@ export function BookingForm({ teacherId, defaultIsOnline = false }: BookingFormP
       });
 
       if (response.status === 201) {
-        const created: { id: string } = await response.json();
+        // The booking already exists server-side at this point — advance
+        // `phase` past "idle" unconditionally before touching the response
+        // body, so a body-parsing failure can never fall through to the
+        // generic catch below and re-show the (now stale) form.
         setValues(initialValues(defaultIsOnline));
-
-        setCreatedBookingId(created.id);
         setPhase("redirecting");
 
-        const result = await startCheckout(created.id);
+        const created: { id?: string } | null = await response.json().catch(() => null);
+        const bookingId = created?.id;
+
+        if (typeof bookingId !== "string") {
+          setCheckoutError(
+            "Your booking was saved, but we couldn't read the confirmation. Please contact us to complete payment.",
+          );
+          setPhase("checkout-failed");
+          return;
+        }
+
+        setCreatedBookingId(bookingId);
+
+        const result = await startCheckout(bookingId);
         if (!result.ok) {
           setCheckoutError(result.error);
           setPhase("checkout-failed");
@@ -172,17 +186,26 @@ export function BookingForm({ teacherId, defaultIsOnline = false }: BookingFormP
             Redirecting to payment…
           </p>
         )}
-        {phase === "checkout-failed" && createdBookingId && (
+        {phase === "checkout-failed" && (
           <div className="flex flex-col gap-2">
-            <p role="status" className="text-sm text-green-600 dark:text-green-400">
+            <p role="status" className="text-sm text-amber-600 dark:text-amber-400">
               Your booking was saved — we just couldn&apos;t start checkout.
             </p>
-            {checkoutError && (
-              <p role="alert" className="text-sm text-red-600 dark:text-red-400">
-                {checkoutError}
-              </p>
+            {createdBookingId ? (
+              // The button owns the error message from here on (seeded with
+              // the auto-redirect's failure reason) — a failed retry
+              // replaces it in place instead of stacking a second one.
+              <ProceedToCheckoutButton
+                bookingId={createdBookingId}
+                initialError={checkoutError}
+              />
+            ) : (
+              checkoutError && (
+                <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+                  {checkoutError}
+                </p>
+              )
             )}
-            <ProceedToCheckoutButton bookingId={createdBookingId} />
           </div>
         )}
       </div>

@@ -6,6 +6,13 @@ import { startCheckout } from "@/lib/bookings/checkout-client";
 
 type ProceedToCheckoutButtonProps = {
   bookingId: string;
+  /**
+   * Seeds the error shown before any click — e.g. `BookingForm`'s
+   * auto-redirect failure reason. Once the button is clicked, its own
+   * submit/error state takes over and supersedes this, so a failed retry
+   * never stacks a second error message underneath the seeded one.
+   */
+  initialError?: string | null;
 };
 
 /**
@@ -15,9 +22,12 @@ type ProceedToCheckoutButtonProps = {
  * Stripe's hosted Checkout page; on failure, shows an inline error instead of
  * throwing.
  */
-export function ProceedToCheckoutButton({ bookingId }: ProceedToCheckoutButtonProps) {
+export function ProceedToCheckoutButton({
+  bookingId,
+  initialError = null,
+}: ProceedToCheckoutButtonProps) {
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(initialError);
 
   async function handleClick() {
     setError(null);
