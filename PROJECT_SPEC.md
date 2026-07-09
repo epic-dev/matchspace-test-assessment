@@ -34,6 +34,7 @@ It wasn't asked explicitly and I don't think I could fit in the time frame. So, 
     - instruments
     - education
     - credentials
+    - lessonLocation
     - onlineAvailability
     - hourlyPrice
 2. Booking request

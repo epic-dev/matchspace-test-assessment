@@ -81,3 +81,6 @@ CONSTRAINTS
 - db transactions, assuming that everything saved successfully
 - branching strategy
 - pr-creator, last minute update: it turns out could take a time
+- booking cancelation
+- unit tests, it turns out they are timeconsuming for the test assessment and consume a lot of tokens
+- schema coupled with payments provider (e.g. `stripe_session_id`) which is not flexible
