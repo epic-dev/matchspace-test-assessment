@@ -16,6 +16,9 @@ const POSTGRES_UNIQUE_VIOLATION = "23505";
 /** PostgREST "no rows found" code, returned by `.single()` when 0 rows match. */
 const POSTGREST_NO_ROWS = "PGRST116";
 
+/** Postgres "invalid text representation" code — e.g. a malformed UUID passed to `.eq("id", ...)`. */
+const POSTGRES_INVALID_INPUT = "22P02";
+
 /** GoTrue error codes seen for a duplicate-email signUp, across API versions. */
 const DUPLICATE_EMAIL_AUTH_CODES = new Set([
   "user_already_exists",
@@ -37,15 +40,17 @@ type TeacherRow = {
 
 export class SupabaseTeacherRepository implements TeacherRepository {
   /**
-   * @param supabase Cookie-based, session-scoped client — used for the
-   *   actual signUp + insert/update so RLS applies as the calling user.
+   * @param supabase Cookie-based, session-scoped client — used for every
+   *   read/write so RLS applies as the calling user.
    * @param adminClient Service-role client — used ONLY to compensate
    *   (delete the auth user) if the `teachers` insert fails after signUp
-   *   already succeeded. Never used for the primary write path.
+   *   already succeeded. Omit it for read-only usage (`list`/`getById`),
+   *   which never touches it — callers shouldn't have to provision a
+   *   service-role key just to read public teacher data.
    */
   constructor(
     private readonly supabase: SupabaseClient,
-    private readonly adminClient: SupabaseClient,
+    private readonly adminClient?: SupabaseClient,
   ) {}
 
   async register(input: RegisterTeacherInput): Promise<Teacher> {
@@ -113,7 +118,46 @@ export class SupabaseTeacherRepository implements TeacherRepository {
     return mapRow(data as TeacherRow);
   }
 
+  async list(): Promise<Teacher[]> {
+    const { data, error } = await this.supabase.from("teachers").select().order("name");
+
+    if (error) {
+      throw new RepositoryError("Failed to list teachers", { cause: error });
+    }
+
+    return (data as TeacherRow[]).map(mapRow);
+  }
+
+  async getById(id: string): Promise<Teacher | null> {
+    const { data, error } = await this.supabase
+      .from("teachers")
+      .select()
+      .eq("id", id)
+      .maybeSingle();
+
+    if (error) {
+      if (isInvalidInput(error)) {
+        // A malformed id (e.g. not a UUID) can never match a row — treat
+        // it the same as not-found rather than a 500.
+        return null;
+      }
+      throw new RepositoryError("Failed to fetch teacher", { cause: error });
+    }
+
+    return data ? mapRow(data as TeacherRow) : null;
+  }
+
   private async compensateOrphanedAuthUser(userId: string, insertError: unknown): Promise<void> {
+    if (!this.adminClient) {
+      // register() is the only caller and always provides an adminClient —
+      // this branch only fires if that contract is violated.
+      logger.error("Cannot compensate orphaned auth user: no admin client provided", {
+        userId,
+        insertError,
+      });
+      return;
+    }
+
     const { error: deleteError } = await this.adminClient.auth.admin.deleteUser(userId);
     if (deleteError) {
       // Compensation itself failed — the email is now genuinely stuck.
@@ -142,6 +186,10 @@ function isNoRowsFound(error: { code?: string }): boolean {
   return error.code === POSTGREST_NO_ROWS;
 }
 
+function isInvalidInput(error: { code?: string }): boolean {
+  return error.code === POSTGRES_INVALID_INPUT;
+}
+
 /**
  * Builds a partial update object containing only the fields present on
  * `input`, mapped to their `teachers` column names. Domain `instruments`
@@ -156,7 +204,6 @@ function buildUpdatePatch(input: UpdateTeacherInput): Record<string, unknown> {
   if (input.instruments !== undefined) patch.instruments = input.instruments.join(", ");
   if (input.education !== undefined) patch.education = input.education;
   if (input.credentials !== undefined) patch.credentials = input.credentials;
-  if (input.location !== undefined) patch.location = input.location;
   if (input.onlineAvailability !== undefined) {
     patch.online_availability = input.onlineAvailability;
   }
@@ -174,7 +221,6 @@ function mapRow(row: TeacherRow): Teacher {
     instruments: parseInstruments(row.instruments),
     education: row.education ?? null,
     credentials: row.credentials ?? null,
-    location: row.location ?? null,
     onlineAvailability: row.online_availability ?? null,
   };
 }

@@ -39,7 +39,7 @@ It wasn't asked explicitly and I don't think I could fit in the time frame. So, 
 2. Booking request
     - teacherId
     - dateTime
-    - hours
+    - hours (default 1)
     - location
     - isOnline
     - studentName
@@ -74,6 +74,11 @@ POST /v1/booking       # creates booking request
         message?,
     }
 POST /v1/checkout      # creates a payment intention (Stripe)
+    body: {
+        mode: 'payment',
+        success_url,
+        line_items,
+    }
 ```
 
 ### Database

@@ -6,7 +6,6 @@ export type Teacher = {
   instruments: string[] | null;
   education: string | null;
   credentials: string | null;
-  location: string | null;
   onlineAvailability: boolean | null;
   hourlyPrice: number | null;
 };
@@ -47,4 +46,8 @@ export interface TeacherRepository {
    * fields present on `input` are changed.
    */
   updateOwnProfile(userId: string, input: UpdateTeacherInput): Promise<Teacher>;
+  /** Returns every registered teacher, ordered alphabetically by name. */
+  list(): Promise<Teacher[]>;
+  /** Returns a single teacher by id, or `null` if none exists (including a malformed id). */
+  getById(id: string): Promise<Teacher | null>;
 }

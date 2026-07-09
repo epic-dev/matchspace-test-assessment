@@ -57,7 +57,13 @@ CONSTRAINTS
 3. Added basic skills and agent for Claude: .claude/skills/, .claude/agents/
 4. Bootstrapped Next app. `pnpm create next-app`
 5. Installed recommended Supabase skills for Claude Code
-6. Planned and implemented the assessment task step-by-step
+6. Planned and implemented the assessment task step-by-step:
+    - using `/planner` I prompting a feature I want to add
+    - review the result, make updates in the generated plan file
+    - run `/executor` agent which looks at the plan generated and writes the code
+    - manually review each step (still)
+    - run `/reviewer` agent to review the latest changes in the working tree
+    - merge to main branch
 
 #### notes 
 - [!] The platform users are teachers. Students have no their own accounts, the platform is public, perhaps it makes sense to consider some anti-spam measures.
@@ -71,3 +77,7 @@ CONSTRAINTS
 - custom auth flow, used Supabase auth instead
 - email confirmation on registeration step
 - instruments table. Ideally to store them in the separate table
+- production-ready Logger
+- db transactions, assuming that everything saved successfully
+- branching strategy
+- pr-creator, last minute update: it turns out could take a time
