@@ -72,7 +72,6 @@ export function BookingForm({ teacherId, defaultIsOnline = false }: BookingFormP
     const payload: Record<string, unknown> = {
       teacherId,
       dateTime: values.dateTime,
-      isOnline: values.isOnline,
       studentName: values.studentName,
       studentEmail: values.studentEmail,
     };
@@ -81,6 +80,11 @@ export function BookingForm({ teacherId, defaultIsOnline = false }: BookingFormP
     }
     if (values.location.trim() !== "") {
       payload.location = values.location;
+    }
+    // Only send isOnline when true — an unconditional false would always
+    // satisfy the schema's "location or isOnline" refine, defeating it.
+    if (values.isOnline) {
+      payload.isOnline = true;
     }
     if (values.message.trim() !== "") {
       payload.message = values.message;
