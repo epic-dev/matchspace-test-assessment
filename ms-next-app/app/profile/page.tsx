@@ -4,6 +4,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 
 import { ProfileForm } from "./ProfileForm";
+import { SignOutButton } from "./SignOutButton";
 
 export const metadata: Metadata = {
   title: "Complete your profile",
@@ -29,6 +30,7 @@ export default async function ProfilePage() {
               see on your public profile.
             </p>
             <ProfileForm />
+            <SignOutButton />
           </>
         ) : (
           <>
