@@ -46,6 +46,15 @@ overwriting or double allocating a teacher's time.
   form" and assumes teacher lookup by id is available. See the
   BLOCKS-EXECUTION question below: `TeacherRepository` currently has no
   `getById`, and nothing in this plan adds it unless Task 2 does.
+- ⚠️ POST-HOC (Task 2 execution): resolved — `TeacherRepository.getById` is
+  being added by the parallel teacher-browsing/listing worktree, not by this
+  plan. Task 2 must depend on that landing (merge or rebase) before it can
+  call `getById` from the booking route. Task 2 is marked blocked until then.
+- ⚠️ POST-HOC (Task 2 re-execution): the parallel teacher-browsing/listing
+  work has since merged into this branch — `TeacherRepository.getById`,
+  `list()`, `GET /v1/teachers`, and `GET /v1/teachers/{id}` all exist for
+  real now. Task 2 unblocked and implemented against the existing
+  `getById`/`SupabaseTeacherRepository` with no changes to that repository.
 
 ## Tasks
 
@@ -82,6 +91,8 @@ overwriting or double allocating a teacher's time.
   teacherId → 404; conflicting time → 409; malformed body → 400 with
   `fieldErrors`.
 - **Depends on:** Task 1 (repository + schema).
+- **Status:** done
+- **Completed:** 2026-07-09
 
 ### 3. Booking form on the teacher detail page
 - **Goal:** the actual "select a teacher, enter date/time" user flow.
