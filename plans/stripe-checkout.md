@@ -33,14 +33,14 @@ Add Stripe (test mode) payment to the booking flow: once a booking exists, the s
 - **Completed:** 2026-07-09
 
 ### 2. Extend booking storage with payment fields
-- **Goal:** Add the two payment-tracking columns to the (external) `bookings` table and expose the repository methods this integration needs, reconciling against whatever the booking-creation session actually shipped.
+- **Goal:** Add the two payment-tracking columns to the `bookings` table (`ms-next-app/lib/bookings/`) and expose the repository methods this integration needs.
 - **Steps:**
-  1. Extend the booking repository port with `getById(id): Promise<Booking | null>`, `attachStripeSession(id, sessionId): Promise<void>`, and `markPaid(id): Promise<void>` (or adapt to whatever methods already exist rather than duplicating).
-  2. Unit test the three new/adapted repository methods against a mocked Supabase client.
-- **Acceptance:** `npm run test` passes; `tsc --noEmit` passes; methods compile against the real `Booking` type from the other session (not a locally-invented duplicate type).
-- **Depends on:** 1 (only for shared conventions; can start in parallel once the real booking shape is known).
-- **Status:** blocked
-- **Blocked reason:** no `bookings` table, repository, or `Booking` type exists anywhere in `ms-next-app` as of 2026-07-09 (checked via `find` across the repo for any `*booking*` file). The plan explicitly treats booking creation as an external dependency being built in a separate session, and the acceptance criterion requires extending the *real* `Booking` type rather than inventing a duplicate — that real type doesn't exist yet, so this task cannot be completed as written. Needs a re-plan/check-in once the booking-creation session lands, or an explicit decision to have this session define the booking repository itself (which would be a scope change from the plan's stated assumption).
+  1. The real `bookings` table (per `lib/bookings/supabase-repository.ts`'s documented schema) matches this plan's assumption: `id, teacher_id, date_time, hours, location, is_online, student_name, student_email, message, status, created_at`. Add `stripe_session_id text` and `payment_status text not null default 'pending'` (table has no migration file — created by hand, per the existing comment — so this is a manual DDL step, documented the same way).
+  2. Extend `Booking` (`lib/bookings/repository.ts`) with `stripeSessionId: string | null` and `paymentStatus: string`, and extend the `BookingRepository` port with `getById(id): Promise<Booking | null>`, `attachStripeSession(id, sessionId): Promise<void>`, and `markPaid(id): Promise<void>` — additive to the existing `create`/`hasConflict` methods, not a replacement.
+  3. Implement the three methods on `SupabaseBookingRepository`, following the existing `mapRow`/`RepositoryError` conventions in that file.
+  4. Unit test the three new repository methods against a mocked Supabase client, alongside the existing `create`/`hasConflict` tests.
+- **Acceptance:** `npm run test` passes; `tsc --noEmit` passes; existing `create`/`hasConflict` behavior and tests are unaffected.
+- **Depends on:** 1 (only for shared conventions; can run independently).
 
 ### 3. `POST /v1/checkout` route handler
 - **Goal:** Given a `bookingId`, create a Stripe Checkout Session for the correct amount and return its URL for the client to redirect to.
