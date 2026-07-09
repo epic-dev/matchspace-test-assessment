@@ -5,7 +5,7 @@ You may notice that I used a limited form of clean architecture, with only a rep
 A full clean-architecture approach would have been overkill.
 
 I wanted to include more functionality to make the result more convenient, but I was afraid I would run out of time.
-I noted that in [[work_log.md]].
+I noted that in [work_log.md](https://github.com/epic-dev/matchspace-test-assessment/blob/main/work_log.md).
 
-In [[AI_WORKFLOW.md]], I described my basic setup for AI-assisted development.
+In [AI_WORKFLOW.md](https://github.com/epic-dev/matchspace-test-assessment/blob/main/AI_WORKFLOW.md), I described my basic setup for AI-assisted development.
 The tools I use most are VS Code and Claude Code, along with custom skills/agents and additional open-source skills.
