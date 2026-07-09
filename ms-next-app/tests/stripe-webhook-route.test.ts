@@ -23,7 +23,7 @@ vi.mock("@/lib/stripe/client", () => ({
   getStripeWebhookSecret: vi.fn().mockReturnValue("whsec_test_fake"),
 }));
 
-import { POST } from "./route";
+import { POST } from "../app/v1/stripe/webhook/route";
 
 const bookingId = "11111111-1111-4111-8111-111111111111";
 

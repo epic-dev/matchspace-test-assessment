@@ -31,7 +31,7 @@ describe("stripe client", () => {
   it("getStripeClient throws when STRIPE_SECRET_KEY is unset", async () => {
     delete process.env[ENV_KEY];
 
-    const { getStripeClient } = await import("./client");
+    const { getStripeClient } = await import("../lib/stripe/client");
 
     expect(() => getStripeClient()).toThrow(
       "Missing required environment variable: STRIPE_SECRET_KEY",
@@ -41,7 +41,7 @@ describe("stripe client", () => {
   it("getStripeSecretKey throws when STRIPE_SECRET_KEY is unset", async () => {
     delete process.env[ENV_KEY];
 
-    const { getStripeSecretKey } = await import("./client");
+    const { getStripeSecretKey } = await import("../lib/stripe/client");
 
     expect(() => getStripeSecretKey()).toThrow(
       "Missing required environment variable: STRIPE_SECRET_KEY",
@@ -51,7 +51,7 @@ describe("stripe client", () => {
   it("getStripeClient returns a Stripe instance when the key is set, without a network call", async () => {
     process.env[ENV_KEY] = "sk_test_fake_key_for_unit_tests";
 
-    const { getStripeClient } = await import("./client");
+    const { getStripeClient } = await import("../lib/stripe/client");
 
     const client = getStripeClient();
 
@@ -61,7 +61,7 @@ describe("stripe client", () => {
   it("getStripeClient returns the same singleton instance across calls", async () => {
     process.env[ENV_KEY] = "sk_test_fake_key_for_unit_tests";
 
-    const { getStripeClient } = await import("./client");
+    const { getStripeClient } = await import("../lib/stripe/client");
 
     const first = getStripeClient();
     const second = getStripeClient();
@@ -72,7 +72,7 @@ describe("stripe client", () => {
   it("getStripeWebhookSecret throws when STRIPE_WEBHOOK_SECRET is unset", async () => {
     delete process.env[WEBHOOK_ENV_KEY];
 
-    const { getStripeWebhookSecret } = await import("./client");
+    const { getStripeWebhookSecret } = await import("../lib/stripe/client");
 
     expect(() => getStripeWebhookSecret()).toThrow(
       "Missing required environment variable: STRIPE_WEBHOOK_SECRET",
@@ -82,7 +82,7 @@ describe("stripe client", () => {
   it("getStripeWebhookSecret returns the value when set", async () => {
     process.env[WEBHOOK_ENV_KEY] = "whsec_test_fake_secret_for_unit_tests";
 
-    const { getStripeWebhookSecret } = await import("./client");
+    const { getStripeWebhookSecret } = await import("../lib/stripe/client");
 
     expect(getStripeWebhookSecret()).toBe("whsec_test_fake_secret_for_unit_tests");
   });

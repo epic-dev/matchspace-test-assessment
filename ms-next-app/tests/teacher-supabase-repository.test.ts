@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { DuplicateEmailError, RepositoryError, TeacherNotFoundError } from "./errors";
-import { SupabaseTeacherRepository } from "./supabase-repository";
+import { DuplicateEmailError, RepositoryError, TeacherNotFoundError } from "../lib/teachers/errors";
+import { SupabaseTeacherRepository } from "../lib/teachers/teacher-supabase-repository";
 
 type MockSupabase = {
   auth: { signUp: ReturnType<typeof vi.fn> };

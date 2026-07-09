@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { logger } from "@/lib/logger";
 import { createClient } from "@/lib/supabase/server";
-import { SupabaseTeacherRepository } from "@/lib/teachers/supabase-repository";
+import { SupabaseTeacherRepository } from "@/lib/teachers/teacher-supabase-repository";
 
 export async function GET(
   _request: Request,

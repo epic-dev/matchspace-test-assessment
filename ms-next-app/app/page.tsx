@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { createClient } from "@/lib/supabase/server";
-import { SupabaseTeacherRepository } from "@/lib/teachers/supabase-repository";
+import { SupabaseTeacherRepository } from "@/lib/teachers/teacher-supabase-repository";
 import { convertCentsToPrice } from "@/utils/priceConverter";
 
 export default async function Home() {

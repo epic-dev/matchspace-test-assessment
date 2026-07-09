@@ -8,6 +8,7 @@ import {
   type UpdateTeacherRequest,
 } from "@/lib/teachers/update-schema";
 import { convertPriceToCents } from "@/utils/priceConverter";
+import { Teacher } from "@/lib/teachers/teacher-repository";
 
 type FieldErrors = Partial<Record<keyof UpdateTeacherRequest, string[]>>;
 
@@ -21,19 +22,17 @@ type FormValues = {
   hourlyPrice: string;
 };
 
-const initialValues: FormValues = {
-  bio: "",
-  instruments: "",
-  education: "",
-  credentials: "",
-  location: "",
-  onlineAvailability: false,
-  hourlyPrice: "",
-};
-
-export function ProfileForm() {
+export function ProfileForm({ teacher }: { teacher: Teacher | null }) {
   const router = useRouter();
-  const [values, setValues] = useState<FormValues>(initialValues);
+  const [values, setValues] = useState<FormValues>({
+    bio: teacher?.bio ?? "",
+    instruments: teacher?.instruments?.join(", ") ?? "",
+    education: teacher?.education ?? "",
+    credentials: teacher?.credentials ?? "",
+    location: teacher?.location ?? "",
+    onlineAvailability: teacher?.onlineAvailability ?? false,
+    hourlyPrice: "",
+  });
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -46,7 +45,7 @@ export function ProfileForm() {
   const locationId = useId();
   const onlineAvailabilityId = useId();
   const hourlyPriceId = useId();
- 
+
   function updateTextField(field: "bio" | "education" | "credentials" | "location") {
     return (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       setValues((prev) => ({ ...prev, [field]: event.target.value }));
@@ -83,7 +82,7 @@ export function ProfileForm() {
     };
 
     const parsed = updateTeacherSchema.safeParse(payload);
-    console.log("Parsed data:", parsed);
+
     if (!parsed.success) {
       setFieldErrors(parsed.error.flatten().fieldErrors);
       return;
@@ -92,7 +91,7 @@ export function ProfileForm() {
     setSubmitting(true);
 
     try {
-      const response = await fetch("/v1/teachers", {
+      const response = await fetch("/v1/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(parsed.data),

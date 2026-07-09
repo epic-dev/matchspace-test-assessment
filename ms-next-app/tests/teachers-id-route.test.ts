@@ -16,7 +16,7 @@ vi.mock("@/lib/teachers/supabase-repository", () => ({
 
 import { RepositoryError } from "@/lib/teachers/errors";
 
-import { GET } from "./route";
+import { GET } from "../app/v1/teachers/[id]/route";
 
 function makeParams(id: string) {
   return { params: Promise.resolve({ id }) };

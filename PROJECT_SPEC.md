@@ -53,12 +53,12 @@ It wasn't asked explicitly and I don't think I could fit in the time frame. So, 
 GET /v1/teachers       # list of teachers
 GET /v1/teachers/{id}  # teacher details
 POST /v1/register      # creates teacher's account
-PATCH /v1/teachers     # updated teacher's info
+PATCH /v1/profile      # updated teacher's profile info
     body: {
-        name?,
         bio?,
         instruments?,
         education?,
+        location?,
         credentials?,
         onlineAvailability?,
         hourlyPrice?

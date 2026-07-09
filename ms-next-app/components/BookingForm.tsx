@@ -1,9 +1,9 @@
 "use client";
 
-import { useId, useState, type FormEvent } from "react";
+import { ChangeEvent, useId, useState } from "react";
 
 import { bookingSchema, type BookingRequest } from "@/lib/bookings/booking-schema";
-import { startCheckout } from "@/lib/bookings/checkout-client";
+import { startCheckout } from "@/lib/checkout/checkout-client";
 import { ProceedToCheckoutButton } from "@/components/ProceedToCheckoutButton";
 
 type FieldErrors = Partial<Record<keyof BookingRequest, string[]>>;
@@ -77,7 +77,7 @@ export function BookingForm({ teacherId, defaultIsOnline = false }: BookingFormP
     setValues((prev) => ({ ...prev, isOnline: event.target.checked }));
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: ChangeEvent<HTMLFormElement>) {
     event.preventDefault();
     setFormError(null);
 
@@ -86,6 +86,7 @@ export function BookingForm({ teacherId, defaultIsOnline = false }: BookingFormP
       dateTime: values.dateTime,
       studentName: values.studentName,
       studentEmail: values.studentEmail,
+      isOnline: values.isOnline,
     };
     if (values.hours.trim() !== "") {
       payload.hours = Number(values.hours);
@@ -93,11 +94,7 @@ export function BookingForm({ teacherId, defaultIsOnline = false }: BookingFormP
     if (values.location.trim() !== "") {
       payload.location = values.location;
     }
-    // Only send isOnline when true — an unconditional false would always
-    // satisfy the schema's "location or isOnline" refine, defeating it.
-    if (values.isOnline) {
-      payload.isOnline = true;
-    }
+
     if (values.message.trim() !== "") {
       payload.message = values.message;
     }

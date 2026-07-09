@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { RepositoryError } from "./errors";
-import { intervalsOverlap } from "./overlap";
+import { intervalsOverlap } from "../../utils/overlap";
 import type { Booking, BookingRepository, CreateBookingInput } from "./repository";
 
 /** Postgres "invalid text representation" code — e.g. a malformed UUID passed to `.eq("id", ...)`. */

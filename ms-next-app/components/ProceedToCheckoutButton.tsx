@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { startCheckout } from "@/lib/bookings/checkout-client";
+import { startCheckout } from "@/lib/checkout/checkout-client";
 
 type ProceedToCheckoutButtonProps = {
   bookingId: string;

@@ -4,7 +4,7 @@ import { bookingSchema } from "@/lib/bookings/booking-schema";
 import { SupabaseBookingRepository } from "@/lib/bookings/supabase-repository";
 import { logger } from "@/lib/logger";
 import { createClient } from "@/lib/supabase/server";
-import { SupabaseTeacherRepository } from "@/lib/teachers/supabase-repository";
+import { SupabaseTeacherRepository } from "@/lib/teachers/teacher-supabase-repository";
 
 export async function POST(request: Request) {
   let body: unknown;

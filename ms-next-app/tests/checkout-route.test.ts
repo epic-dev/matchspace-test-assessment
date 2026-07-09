@@ -37,7 +37,7 @@ vi.mock("@/lib/stripe/client", () => ({
   }),
 }));
 
-import { POST } from "./route";
+import { POST } from "../app/v1/checkout/route";
 
 const booking = {
   id: "11111111-1111-4111-8111-111111111111",

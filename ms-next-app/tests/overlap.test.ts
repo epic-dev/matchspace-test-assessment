@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { intervalsOverlap } from "./overlap";
+import { intervalsOverlap } from "../utils/overlap";
 
 function at(iso: string): Date {
   return new Date(iso);

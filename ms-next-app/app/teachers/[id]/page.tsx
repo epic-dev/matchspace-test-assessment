@@ -2,9 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
-import { SupabaseTeacherRepository } from "@/lib/teachers/supabase-repository";
+import { SupabaseTeacherRepository } from "@/lib/teachers/teacher-supabase-repository";
 
-import { BookingForm } from "./BookingForm";
+import { BookingForm } from "../../../components/BookingForm";
+import { convertCentsToPrice } from "@/utils/priceConverter";
 
 /** Shown in place of a field that hasn't been filled in yet. */
 const NOT_PROVIDED = "Not provided yet";
@@ -31,7 +32,7 @@ export default async function TeacherDetailPage({ params }: PageProps) {
       : NOT_PROVIDED;
 
   const hourlyPriceText =
-    teacher.hourlyPrice !== null ? `${(teacher.hourlyPrice / 100).toFixed(2)}` : NOT_PROVIDED;
+    teacher.hourlyPrice !== null ? `${convertCentsToPrice(teacher.hourlyPrice).toFixed(2)}` : NOT_PROVIDED;
 
   const onlineAvailabilityText =
     teacher.onlineAvailability === null
@@ -86,6 +87,15 @@ export default async function TeacherDetailPage({ params }: PageProps) {
             </dt>
             <dd className="mt-1 text-black dark:text-zinc-50">
               {teacher.credentials || NOT_PROVIDED}
+            </dd>
+          </div>
+
+          <div>
+            <dt className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
+              Location
+            </dt>
+            <dd className="mt-1 text-black dark:text-zinc-50">
+              {teacher.location || NOT_PROVIDED}
             </dd>
           </div>
 

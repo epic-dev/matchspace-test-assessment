@@ -3,8 +3,9 @@ import Link from "next/link";
 
 import { createClient } from "@/lib/supabase/server";
 
-import { ProfileForm } from "./ProfileForm";
-import { SignOutButton } from "./SignOutButton";
+import { ProfileForm } from "../../components/ProfileForm";
+import { SignOutButton } from "../../components/SignOutButton";
+import { SupabaseTeacherRepository } from "@/lib/teachers/teacher-supabase-repository";
 
 export const metadata: Metadata = {
   title: "Complete your profile",
@@ -13,10 +14,11 @@ export const metadata: Metadata = {
 
 export default async function ProfilePage() {
   const supabase = await createClient();
+  const repository = new SupabaseTeacherRepository(supabase);
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
+  const teacher = user ? await repository.getById(user.id) : null;
   return (
     <div className="flex flex-1 items-center justify-center bg-zinc-50 px-6 py-16 dark:bg-black">
       <main className="w-full max-w-md rounded-lg border border-black/[.08] bg-white p-8 dark:border-white/[.145] dark:bg-zinc-950">
@@ -29,7 +31,7 @@ export default async function ProfilePage() {
               Tell students about your teaching — this is what they&apos;ll
               see on your public profile.
             </p>
-            <ProfileForm />
+            <ProfileForm teacher={teacher} />
             <SignOutButton />
           </>
         ) : (

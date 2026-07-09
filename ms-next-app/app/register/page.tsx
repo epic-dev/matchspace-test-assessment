@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { AuthTabs } from "./AuthTabs";
+import { AuthTabs } from "../../components/AuthTabs";
 
 export const metadata: Metadata = {
   title: "Sign up or log in",

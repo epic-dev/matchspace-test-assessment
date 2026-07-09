@@ -24,10 +24,6 @@ export const bookingSchema = z
     studentName: z.string().trim().min(1, "Student name is required"),
     studentEmail: z.email("Enter a valid email address"),
     message: z.string().trim().optional(),
-  })
-  .refine((data) => data.location !== undefined || data.isOnline !== undefined, {
-    message: "Provide a location or set isOnline",
-    path: ["location"],
   });
 
 export type BookingRequest = z.infer<typeof bookingSchema>;

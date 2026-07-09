@@ -5,7 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { DuplicateEmailError } from "@/lib/teachers/errors";
 import { registerSchema } from "@/lib/teachers/register-schema";
-import { SupabaseTeacherRepository } from "@/lib/teachers/supabase-repository";
+import { SupabaseTeacherRepository } from "@/lib/teachers/teacher-supabase-repository";
 
 export async function POST(request: Request) {
   let body: unknown;

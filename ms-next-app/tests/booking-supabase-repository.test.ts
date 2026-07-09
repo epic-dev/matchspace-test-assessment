@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { RepositoryError } from "./errors";
-import { SupabaseBookingRepository } from "./supabase-repository";
+import { RepositoryError } from "../lib/bookings/errors";
+import { SupabaseBookingRepository } from "../lib/bookings/supabase-repository";
 
 const baseRow = {
   id: "booking-1",

@@ -8,7 +8,7 @@ import type {
   Teacher,
   TeacherRepository,
   UpdateTeacherInput,
-} from "./repository";
+} from "./teacher-repository";
 
 /** Postgres unique_violation error code. */
 const POSTGRES_UNIQUE_VIOLATION = "23505";

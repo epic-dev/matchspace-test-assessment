@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { updateTeacherSchema } from "./update-schema";
+import { updateTeacherSchema } from "../lib/teachers/update-schema";
 
 describe("updateTeacherSchema", () => {
   it("accepts a valid partial payload", () => {

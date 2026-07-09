@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 
-import { checkoutSchema } from "@/lib/bookings/checkout-schema";
+import { checkoutSchema } from "@/lib/checkout/checkout-schema";
 import { SupabaseBookingRepository } from "@/lib/bookings/supabase-repository";
 import { logger } from "@/lib/logger";
 import { getStripeClient } from "@/lib/stripe/client";
 import { createClient } from "@/lib/supabase/server";
-import { SupabaseTeacherRepository } from "@/lib/teachers/supabase-repository";
+import { SupabaseTeacherRepository } from "@/lib/teachers/teacher-supabase-repository";
 
 export async function POST(request: Request) {
   let body: unknown;
