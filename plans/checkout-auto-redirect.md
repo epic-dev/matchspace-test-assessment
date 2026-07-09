@@ -13,6 +13,7 @@ Currently, `POST /v1/booking` succeeds and `BookingForm` just shows a static "pe
 - No component-testing library (e.g. React Testing Library) is installed — consistent with the stripe-checkout plan's Task 5 note, UI components are verified manually in the browser, not via automated component tests. `startCheckout` itself (a plain function, not a component) is unit-testable with a mocked `fetch`.
 - Idempotency is scoped to `/v1/checkout` only. `/v1/booking` already has slot-conflict detection (`hasConflict`); a client-generated idempotency key to fully dedupe booking creation itself is a separate, larger change and is explicitly out of scope here.
 - Currency/pricing logic (`booking.hours * teacher.hourlyPrice`, rounded to cents) is unchanged — the idempotency key only needs to be stable per booking, not encode the price itself.
+- ⚠️ POST-HOC: the project's `vitest.config.ts` uses `environment: "node"` (no `jsdom`/`happy-dom` installed), so there is no real `window` global in tests. `lib/bookings/checkout-client.test.ts` stubs a minimal `window` object via `vi.stubGlobal("window", ...)` rather than relying on a DOM environment — no new dependency was added, consistent with "no component-testing library installed."
 
 ## Tasks
 
@@ -24,6 +25,8 @@ Currently, `POST /v1/booking` succeeds and `BookingForm` just shows a static "pe
   3. Extend `app/v1/checkout/route.test.ts` to assert the mocked `stripe.checkout.sessions.create` call receives the expected `idempotencyKey`, derived from the booking id used in the test.
 - **Acceptance:** `npm run test` passes, including the new idempotency-key assertion; `tsc --noEmit` clean.
 - **Depends on:** none.
+- **Status:** done
+- **Completed:** 2026-07-09
 
 ### 2. Shared checkout-initiation client helper
 - **Goal:** One tested code path for "call `POST /v1/checkout` and either redirect to Stripe or return a usable error," so the new auto-trigger and the existing manual retry button don't duplicate the same fetch logic.
@@ -33,6 +36,8 @@ Currently, `POST /v1/booking` succeeds and `BookingForm` just shows a static "pe
   3. Unit test `startCheckout` (mocking global `fetch`): OK response → returns `{ ok: true }` and sets `location.href`; non-OK response with an `error` body → returns that exact message; thrown error → returns the generic fallback message.
 - **Acceptance:** `npm run test` passes (new `checkout-client.test.ts`, no behavior change in `ProceedToCheckoutButton` — verify manually in the browser that its click-to-redirect flow still works); `tsc --noEmit` clean.
 - **Depends on:** none (can run in parallel with Task 1).
+- **Status:** done
+- **Completed:** 2026-07-09
 
 ### 3. Auto-redirect `BookingForm` to checkout after booking creation
 - **Goal:** Once a booking is created, take the student straight to Stripe's hosted payment page with no extra click; if that fails, give them a clear retry action instead of losing the booking.
@@ -43,6 +48,8 @@ Currently, `POST /v1/booking` succeeds and `BookingForm` just shows a static "pe
   4. Once a booking has been created (`phase !== 'idle'`), hide the form fields and the "Request booking" submit button — resubmitting would create a duplicate pending booking for the same slot; only the retry button should remain interactive.
 - **Acceptance:** `npm run test` passes; `tsc --noEmit` clean; manual browser check: submitting a valid booking redirects to a real Stripe test-mode Checkout page; forcing a checkout failure (e.g. a teacher with no `hourlyPrice`) shows the retry button, and clicking it (Task 1's idempotency key covers this being a retry of the same booking) succeeds once the underlying issue is resolved.
 - **Depends on:** 2.
+- **Status:** done
+- **Completed:** 2026-07-09
 
 ## Open questions
 INFORMATIONAL:

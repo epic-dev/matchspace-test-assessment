@@ -3,8 +3,19 @@
 import { useId, useState, type FormEvent } from "react";
 
 import { bookingSchema, type BookingRequest } from "@/lib/bookings/booking-schema";
+import { startCheckout } from "@/lib/bookings/checkout-client";
+import { ProceedToCheckoutButton } from "@/components/ProceedToCheckoutButton";
 
 type FieldErrors = Partial<Record<keyof BookingRequest, string[]>>;
+
+/**
+ * `idle`: form is interactive, nothing submitted yet.
+ * `redirecting`: booking was created and `startCheckout` is in flight (or
+ * about to navigate the browser away).
+ * `checkout-failed`: booking was created but `startCheckout` failed — the
+ * booking is not lost, only a retry (via `ProceedToCheckoutButton`) remains.
+ */
+type Phase = "idle" | "redirecting" | "checkout-failed";
 
 type FormValues = {
   dateTime: string;
@@ -44,7 +55,9 @@ export function BookingForm({ teacherId, defaultIsOnline = false }: BookingFormP
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const [phase, setPhase] = useState<Phase>("idle");
+  const [createdBookingId, setCreatedBookingId] = useState<string | null>(null);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
   const dateTimeId = useId();
   const hoursId = useId();
@@ -67,7 +80,6 @@ export function BookingForm({ teacherId, defaultIsOnline = false }: BookingFormP
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setFormError(null);
-    setSuccess(false);
 
     const payload: Record<string, unknown> = {
       teacherId,
@@ -106,8 +118,17 @@ export function BookingForm({ teacherId, defaultIsOnline = false }: BookingFormP
       });
 
       if (response.status === 201) {
-        setSuccess(true);
+        const created: { id: string } = await response.json();
         setValues(initialValues(defaultIsOnline));
+
+        setCreatedBookingId(created.id);
+        setPhase("redirecting");
+
+        const result = await startCheckout(created.id);
+        if (!result.ok) {
+          setCheckoutError(result.error);
+          setPhase("checkout-failed");
+        }
         return;
       }
 
@@ -137,6 +158,35 @@ export function BookingForm({ teacherId, defaultIsOnline = false }: BookingFormP
     } finally {
       setSubmitting(false);
     }
+  }
+
+  // Once a booking has been created (any phase past "idle"), resubmitting
+  // the form would create a duplicate pending booking for the same slot —
+  // hide the fields and submit button, leaving only the redirect status or
+  // the retry button interactive.
+  if (phase !== "idle") {
+    return (
+      <div className="mt-6 flex flex-col gap-4">
+        {phase === "redirecting" && (
+          <p role="status" className="text-sm text-black dark:text-zinc-50">
+            Redirecting to payment…
+          </p>
+        )}
+        {phase === "checkout-failed" && createdBookingId && (
+          <div className="flex flex-col gap-2">
+            <p role="status" className="text-sm text-green-600 dark:text-green-400">
+              Your booking was saved — we just couldn&apos;t start checkout.
+            </p>
+            {checkoutError && (
+              <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+                {checkoutError}
+              </p>
+            )}
+            <ProceedToCheckoutButton bookingId={createdBookingId} />
+          </div>
+        )}
+      </div>
+    );
   }
 
   return (
@@ -350,12 +400,6 @@ export function BookingForm({ teacherId, defaultIsOnline = false }: BookingFormP
       {formError && (
         <p role="alert" className="text-sm text-red-600 dark:text-red-400">
           {formError}
-        </p>
-      )}
-
-      {success && (
-        <p role="status" className="text-sm text-green-600 dark:text-green-400">
-          Booking request sent — pending confirmation.
         </p>
       )}
 

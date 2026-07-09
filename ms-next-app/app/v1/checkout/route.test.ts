@@ -109,6 +109,7 @@ describe("POST /v1/checkout", () => {
           }),
         ],
       }),
+      { idempotencyKey: `checkout-session:${booking.id}` },
     );
     expect(attachStripeSessionMock).toHaveBeenCalledWith(booking.id, "cs_test_123");
     expect(response.status).toBe(200);
