@@ -56,12 +56,12 @@ POST /v1/register      # creates teacher's account
 PATCH /v1/profile      # updated teacher's profile info
     body: {
         bio?,
-        instruments?,
+        instruments,
         education?,
         location?,
         credentials?,
         onlineAvailability?,
-        hourlyPrice?
+        hourlyPrice
     }
 POST /v1/booking       # creates booking request
     body: {
