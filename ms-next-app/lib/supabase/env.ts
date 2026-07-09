@@ -1,17 +1,9 @@
-function requireEnv(name: string): string {
-  const value = process.env[name];
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${name}`);
-  }
-  return value;
+export function getSupabaseUrl() {
+  return process.env.NEXT_PUBLIC_SUPABASE_URL;
 }
 
-export function getSupabaseUrl(): string {
-  return requireEnv("NEXT_PUBLIC_SUPABASE_URL");
-}
-
-export function getSupabasePublishableKey(): string {
-  return requireEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY");
+export function getSupabasePublishableKey() {
+  return process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 }
 
 /**
@@ -19,6 +11,6 @@ export function getSupabasePublishableKey(): string {
  * access via `auth.admin`. Only used for compensating actions, never for
  * regular request handling.
  */
-export function getSupabaseSecretKey(): string {
-  return requireEnv("SUPABASE_SECRET_KEY");
+export function getSupabaseSecretKey() {
+  return process.env.SUPABASE_SECRET_KEY;
 }

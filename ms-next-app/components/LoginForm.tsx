@@ -2,16 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { useId, useState, type FormEvent } from "react";
-import { z } from "zod";
 
-import { createClient } from "@/lib/supabase/client";
+import { loginSchema, type LoginInput } from "@/lib/auth/login-schema";
+import { logger } from "@/lib/logger";
 
-const loginSchema = z.object({
-  email: z.email("Enter a valid email address"),
-  password: z.string().min(1, "Password is required"),
-});
-
-type FieldErrors = Partial<Record<"email" | "password", string[]>>;
+type FieldErrors = Partial<Record<keyof LoginInput, string[]>>;
 
 type FormValues = {
   email: string;
@@ -52,16 +47,21 @@ export function LoginForm() {
     setSubmitting(true);
 
     try {
-      const supabase = createClient();
-      const { error } = await supabase.auth.signInWithPassword(parsed.data);
+      const response = await fetch("/v1/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(parsed.data),
+      });
 
-      if (error) {
+      if (!response.ok) {
+        logger.error("Login failed", { status: response.status });
         setFormError("Invalid email or password");
         return;
       }
 
       router.push("/profile");
-    } catch {
+    } catch (error) {
+      logger.error("Login failed", { error });
       setFormError("Invalid email or password");
     } finally {
       setSubmitting(false);

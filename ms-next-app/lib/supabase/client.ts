@@ -7,5 +7,12 @@ import { getSupabasePublishableKey, getSupabaseUrl } from "./env";
  * persists the session in cookies via `@supabase/ssr`.
  */
 export function createClient() {
-  return createBrowserClient(getSupabaseUrl(), getSupabasePublishableKey());
+  const supabaseUrl = getSupabaseUrl();
+  const supabasePublishableKey = getSupabasePublishableKey();
+  if (!supabaseUrl || !supabasePublishableKey) {
+    throw new Error(
+      "Missing required environment variables: NEXT_PUBLIC_SUPABASE_URL and/or NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+    );
+  }
+  return createBrowserClient(supabaseUrl, supabasePublishableKey);
 }

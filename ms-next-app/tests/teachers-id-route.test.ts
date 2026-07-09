@@ -8,7 +8,7 @@ vi.mock("@/lib/supabase/server", () => ({
 vi.mock("@/lib/supabase/admin", () => ({
   createAdminClient: vi.fn().mockReturnValue({}),
 }));
-vi.mock("@/lib/teachers/supabase-repository", () => ({
+vi.mock("@/lib/teachers/teacher-supabase-repository", () => ({
   SupabaseTeacherRepository: vi.fn().mockImplementation(function MockRepository() {
     return { getById: getByIdMock };
   }),

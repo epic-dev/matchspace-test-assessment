@@ -196,6 +196,7 @@ describe("SupabaseTeacherRepository.updateOwnProfile", () => {
       instruments: ["piano", "violin"],
       education: null,
       credentials: null,
+      location: null,
       onlineAvailability: true,
     });
   });
@@ -287,6 +288,7 @@ describe("SupabaseTeacherRepository.list", () => {
         id: "user-2",
         name: "Bo Diddley",
         ...baseTeacher,
+        hourlyPrice: null,
       },
     ]);
   });

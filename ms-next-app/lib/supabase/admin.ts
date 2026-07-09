@@ -9,7 +9,14 @@ import { getSupabaseSecretKey, getSupabaseUrl } from "./env";
  * go through the cookie-based client in `./server.ts` so RLS applies.
  */
 export function createAdminClient() {
-  return createSupabaseClient(getSupabaseUrl(), getSupabaseSecretKey(), {
+  const supabaseUrl = getSupabaseUrl();
+  const supabaseSecretKey = getSupabaseSecretKey();
+  if (!supabaseUrl || !supabaseSecretKey) {
+    throw new Error(
+      "Missing required environment variables: NEXT_PUBLIC_SUPABASE_URL and/or SUPABASE_SECRET_KEY",
+    );
+  }
+  return createSupabaseClient(supabaseUrl, supabaseSecretKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,

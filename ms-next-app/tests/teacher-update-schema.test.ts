@@ -12,9 +12,9 @@ describe("updateTeacherSchema", () => {
     expect(result.success).toBe(true);
   });
 
-  it("accepts an empty body as a no-op success", () => {
+  it("rejects an empty body since instruments and hourlyPrice are required", () => {
     const result = updateTeacherSchema.safeParse({});
-    expect(result.success).toBe(true);
+    expect(result.success).toBe(false);
   });
 
   it("accepts the full field set", () => {
@@ -52,7 +52,11 @@ describe("updateTeacherSchema", () => {
   });
 
   it("accepts an empty-string bio (no min-length rule)", () => {
-    const result = updateTeacherSchema.safeParse({ bio: "" });
+    const result = updateTeacherSchema.safeParse({
+      bio: "",
+      instruments: ["piano"],
+      hourlyPrice: 40,
+    });
     expect(result.success).toBe(true);
   });
 

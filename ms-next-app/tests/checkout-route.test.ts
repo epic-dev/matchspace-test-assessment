@@ -26,7 +26,7 @@ vi.mock("@/lib/bookings/supabase-repository", () => ({
     };
   }),
 }));
-vi.mock("@/lib/teachers/supabase-repository", () => ({
+vi.mock("@/lib/teachers/teacher-supabase-repository", () => ({
   SupabaseTeacherRepository: vi.fn().mockImplementation(function MockTeacherRepository() {
     return { getById: getTeacherByIdMock };
   }),
