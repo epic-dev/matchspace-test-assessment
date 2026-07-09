@@ -16,7 +16,7 @@ import { createClient } from "@/lib/supabase/server";
 export async function POST(request: Request) {
   const rawBody = await request.text();
   const signature = request.headers.get("stripe-signature");
-
+console.log("checkout.session.completed event received", { rawBody, signature });
   let event: Stripe.Event;
   try {
     if (!signature) {
@@ -51,6 +51,7 @@ export async function POST(request: Request) {
   }
 
   try {
+    logger.info("checkout.session.completed event received", { bookingId, sessionId: session.id });
     const supabase = await createClient();
     const bookingRepository = new SupabaseBookingRepository(supabase);
     await bookingRepository.markPaid(bookingId);

@@ -52,7 +52,7 @@ export async function POST(request: Request) {
     // unit (cents for EUR) — round rather than truncate so e.g. a
     // hourlyPrice/hours combination that lands on a fraction of a cent isn't
     // silently under-charged.
-    const unitAmount = Math.round(booking.hours * teacher.hourlyPrice * 100);
+    const unitAmount = Math.round(booking.hours * teacher.hourlyPrice);
     const origin = new URL(request.url).origin;
 
     const stripe = getStripeClient();

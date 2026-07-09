@@ -84,3 +84,10 @@ CONSTRAINTS
 - booking cancelation
 - unit tests, it turns out they are timeconsuming for the test assessment and consume a lot of tokens
 - schema coupled with payments provider (e.g. `stripe_session_id`) which is not flexible
+- currency selection
+
+### ai produced bad code
+- it was explicitly noted that hourly price is in cents in the db, so a stripe payment should containe a value `hours * hourlyPrice`
+
+### what to improve 
+- observability: logger on successful operations

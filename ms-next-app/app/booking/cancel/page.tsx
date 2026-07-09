@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/dist/client/link";
 
 export const metadata: Metadata = {
   title: "Payment cancelled",
@@ -16,6 +17,13 @@ export default function BookingCancelPage() {
           Your payment was cancelled and your booking has not been confirmed.
           You can try again whenever you&apos;re ready.
         </p>
+        <Link
+          href="/"
+        >
+          <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400 underline">
+            Back to dashboard
+          </p>
+        </Link>
       </main>
     </div>
   );
