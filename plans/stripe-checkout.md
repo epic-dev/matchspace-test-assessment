@@ -1,7 +1,7 @@
 # Plan: Stripe checkout for bookings
 
 Date: 2026-07-08
-Status: draft
+Status: done — all 5 tasks implemented; two manual steps remain (see Definition of done): apply the `stripe_session_id`/`payment_status` DDL to the real Supabase project, and run a live end-to-end test-mode payment via the Stripe CLI/dashboard.
 
 ## Summary
 Add Stripe (test mode) payment to the booking flow: once a booking exists, the student proceeds to checkout, which creates a Stripe Checkout Session for the booking's amount and redirects to Stripe's hosted payment page. A webhook confirms the booking server-side once Stripe reports the payment as complete (`checkout.session.completed`), independent of whether the student's browser makes it back to the app. This plan covers `POST /v1/checkout`, the webhook, and the minimal UI to trigger/land the flow — it does **not** cover booking creation itself (`POST /v1/booking`), which is being built in a separate session and is treated here as an external dependency. "Done" means: given an existing pending booking, a test-mode Stripe payment can be completed end-to-end and the booking's stored status flips to confirmed via the webhook, with no separate `payments` table (payment fields live on the booking row, per your choice).
