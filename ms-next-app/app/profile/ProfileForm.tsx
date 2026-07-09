@@ -1,12 +1,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useId, useState, type FormEvent } from "react";
+import { ChangeEvent, useId, useState } from "react";
 
 import {
   updateTeacherSchema,
   type UpdateTeacherRequest,
 } from "@/lib/teachers/update-schema";
+import { convertPriceToCents } from "@/utils/priceConverter";
 
 type FieldErrors = Partial<Record<keyof UpdateTeacherRequest, string[]>>;
 
@@ -17,6 +18,7 @@ type FormValues = {
   credentials: string;
   location: string;
   onlineAvailability: boolean;
+  hourlyPrice: string;
 };
 
 const initialValues: FormValues = {
@@ -26,6 +28,7 @@ const initialValues: FormValues = {
   credentials: "",
   location: "",
   onlineAvailability: false,
+  hourlyPrice: "",
 };
 
 export function ProfileForm() {
@@ -42,7 +45,8 @@ export function ProfileForm() {
   const credentialsId = useId();
   const locationId = useId();
   const onlineAvailabilityId = useId();
-
+  const hourlyPriceId = useId();
+ 
   function updateTextField(field: "bio" | "education" | "credentials" | "location") {
     return (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       setValues((prev) => ({ ...prev, [field]: event.target.value }));
@@ -60,7 +64,7 @@ export function ProfileForm() {
     }));
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: ChangeEvent<HTMLFormElement>) {
     event.preventDefault();
     setFormError(null);
     setSuccess(false);
@@ -75,9 +79,11 @@ export function ProfileForm() {
       credentials: values.credentials,
       location: values.location,
       onlineAvailability: values.onlineAvailability,
+      hourlyPrice: convertPriceToCents(parseFloat(values.hourlyPrice) || 0),
     };
 
     const parsed = updateTeacherSchema.safeParse(payload);
+    console.log("Parsed data:", parsed);
     if (!parsed.success) {
       setFieldErrors(parsed.error.flatten().fieldErrors);
       return;
@@ -305,6 +311,39 @@ export function ProfileForm() {
           {message}
         </p>
       ))}
+
+      <div className="flex flex-col gap-1">
+        <label
+          htmlFor={hourlyPriceId}
+          className="text-sm font-medium text-black dark:text-zinc-50"
+        >
+          Hourly price (EUR)
+        </label>
+        <input
+          id={hourlyPriceId}
+          name="hourlyPrice"
+          type="text"
+          value={values.hourlyPrice}
+          placeholder="50.0"
+          onChange={(event) =>
+            setValues((prev) => ({ ...prev, hourlyPrice: event.target.value || "" }))
+          }
+          aria-invalid={fieldErrors.hourlyPrice ? true : undefined}
+          aria-describedby={
+            fieldErrors.hourlyPrice ? `${hourlyPriceId}-error` : undefined
+          }
+          className="rounded-md border border-black/[.15] bg-transparent px-3 py-2 text-sm text-black outline-none focus:border-black/40 dark:border-white/[.2] dark:text-zinc-50 dark:focus:border-white/40"
+        />
+        {fieldErrors.hourlyPrice?.map((message) => (
+          <p
+            key={message}
+            id={`${hourlyPriceId}-error`}
+            className="text-sm text-red-600 dark:text-red-400"
+          >
+            {message}
+          </p>
+        ))}
+      </div>
 
       {formError && (
         <p role="alert" className="text-sm text-red-600 dark:text-red-400">

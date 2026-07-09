@@ -35,7 +35,7 @@ type TeacherRow = {
   education: string | null;
   credentials: string | null;
   location: string | null;
-  online_availability: boolean | null;
+  online_available: boolean | null;
 };
 
 export class SupabaseTeacherRepository implements TeacherRepository {
@@ -54,7 +54,7 @@ export class SupabaseTeacherRepository implements TeacherRepository {
   ) {}
 
   async register(input: RegisterTeacherInput): Promise<Teacher> {
-    const { name, email, password, hourlyPrice } = input;
+    const { name, email, password } = input;
 
     const { data: signUpData, error: signUpError } = await this.supabase.auth.signUp({
       email,
@@ -78,7 +78,6 @@ export class SupabaseTeacherRepository implements TeacherRepository {
       .insert({
         id: user.id,
         name,
-        hourly_price: hourlyPrice ?? null,
       })
       .select()
       .single();
@@ -205,7 +204,7 @@ function buildUpdatePatch(input: UpdateTeacherInput): Record<string, unknown> {
   if (input.education !== undefined) patch.education = input.education;
   if (input.credentials !== undefined) patch.credentials = input.credentials;
   if (input.onlineAvailability !== undefined) {
-    patch.online_availability = input.onlineAvailability;
+    patch.online_available = input.onlineAvailability;
   }
   if (input.hourlyPrice !== undefined) patch.hourly_price = input.hourlyPrice;
 
@@ -221,7 +220,8 @@ function mapRow(row: TeacherRow): Teacher {
     instruments: parseInstruments(row.instruments),
     education: row.education ?? null,
     credentials: row.credentials ?? null,
-    onlineAvailability: row.online_availability ?? null,
+    onlineAvailability: row.online_available ?? null,
+    location: row.location ?? null,
   };
 }
 

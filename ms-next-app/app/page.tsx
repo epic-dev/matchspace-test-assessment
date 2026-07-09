@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { createClient } from "@/lib/supabase/server";
 import { SupabaseTeacherRepository } from "@/lib/teachers/supabase-repository";
+import { convertCentsToPrice } from "@/utils/priceConverter";
 
 export default async function Home() {
   const supabase = await createClient();
@@ -58,7 +59,7 @@ export default async function Home() {
                 </p>
                 {teacher.hourlyPrice !== null && (
                   <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-                    ${teacher.hourlyPrice}/hr
+                    ${convertCentsToPrice(teacher.hourlyPrice)}/hr
                   </p>
                 )}
               </li>

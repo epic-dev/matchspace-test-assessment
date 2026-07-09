@@ -89,6 +89,7 @@ As a database I've chosen Supabase because of it has auth management out of the 
 Simple repositories, adapters, ports and interfaces. Next.js server actions handle Stripe API calls and database operations
 
 ### High-level design schema
+![alt text](image.png)
 
 ### Tech stack
 

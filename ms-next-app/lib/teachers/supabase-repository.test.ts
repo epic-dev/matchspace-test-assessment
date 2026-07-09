@@ -49,13 +49,14 @@ const baseTeacher = {
   education: null,
   credentials: null,
   onlineAvailability: null,
+  location: null,
+  hourlyPrice: 50,
 };
 
 const input = {
   name: "Ada Lovelace",
   email: "ada@example.com",
   password: "hunter22",
-  hourlyPrice: 50,
 };
 
 describe("SupabaseTeacherRepository.register", () => {
@@ -75,12 +76,10 @@ describe("SupabaseTeacherRepository.register", () => {
     expect(insertMock).toHaveBeenCalledWith({
       id: "user-1",
       name: input.name,
-      hourly_price: input.hourlyPrice,
     });
     expect(teacher).toEqual({
       id: "user-1",
       name: "Ada Lovelace",
-      hourlyPrice: 50,
       ...baseTeacher,
     });
     expect(adminClient.auth.admin.deleteUser).not.toHaveBeenCalled();
@@ -167,7 +166,7 @@ describe("SupabaseTeacherRepository.updateOwnProfile", () => {
         education: null,
         credentials: null,
         location: null,
-        online_availability: true,
+        online_available: true,
       },
       error: null,
     });
@@ -185,7 +184,7 @@ describe("SupabaseTeacherRepository.updateOwnProfile", () => {
     expect(update).toHaveBeenCalledWith({
       bio: "Piano teacher",
       instruments: "piano, violin",
-      online_availability: true,
+      online_available: true,
       hourly_price: 75,
     });
     expect(eq).toHaveBeenCalledWith("id", "user-1");
@@ -249,7 +248,7 @@ describe("SupabaseTeacherRepository.list", () => {
           education: null,
           credentials: null,
           location: null,
-          online_availability: null,
+          online_available: null,
         },
         {
           id: "user-2",
@@ -260,7 +259,7 @@ describe("SupabaseTeacherRepository.list", () => {
           education: null,
           credentials: null,
           location: null,
-          online_availability: null,
+          online_available: null,
         },
       ],
       error: null,
@@ -282,11 +281,11 @@ describe("SupabaseTeacherRepository.list", () => {
         education: null,
         credentials: null,
         onlineAvailability: null,
+        location: null,
       },
       {
         id: "user-2",
         name: "Bo Diddley",
-        hourlyPrice: null,
         ...baseTeacher,
       },
     ]);
@@ -333,7 +332,7 @@ describe("SupabaseTeacherRepository.getById", () => {
         education: null,
         credentials: null,
         location: null,
-        online_availability: null,
+        online_available: null,
       },
       error: null,
     });
@@ -347,7 +346,6 @@ describe("SupabaseTeacherRepository.getById", () => {
     expect(teacher).toEqual({
       id: "user-1",
       name: "Ada Lovelace",
-      hourlyPrice: 50,
       ...baseTeacher,
     });
   });

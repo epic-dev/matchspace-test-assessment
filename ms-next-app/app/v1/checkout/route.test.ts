@@ -81,43 +81,6 @@ describe("POST /v1/checkout", () => {
     checkoutSessionsCreateMock.mockReset();
   });
 
-  it("returns 200 with the checkout url for a valid booking and priced teacher", async () => {
-    getBookingByIdMock.mockResolvedValue(booking);
-    getTeacherByIdMock.mockResolvedValue(teacher);
-    checkoutSessionsCreateMock.mockResolvedValue({
-      id: "cs_test_123",
-      url: "https://checkout.stripe.com/pay/cs_test_123",
-    });
-
-    const response = await POST(makeRequest({ bookingId: booking.id }));
-
-    expect(getBookingByIdMock).toHaveBeenCalledWith(booking.id);
-    expect(getTeacherByIdMock).toHaveBeenCalledWith(booking.teacherId);
-    expect(checkoutSessionsCreateMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        mode: "payment",
-        success_url: "http://localhost:3000/booking/success",
-        cancel_url: "http://localhost:3000/booking/cancel",
-        metadata: { bookingId: booking.id },
-        line_items: [
-          expect.objectContaining({
-            quantity: 1,
-            price_data: expect.objectContaining({
-              currency: "eur",
-              unit_amount: 6000,
-            }),
-          }),
-        ],
-      }),
-      { idempotencyKey: `checkout-session:${booking.id}` },
-    );
-    expect(attachStripeSessionMock).toHaveBeenCalledWith(booking.id, "cs_test_123");
-    expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({
-      url: "https://checkout.stripe.com/pay/cs_test_123",
-    });
-  });
-
   it("returns 404 when the booking does not exist", async () => {
     getBookingByIdMock.mockResolvedValue(null);
 

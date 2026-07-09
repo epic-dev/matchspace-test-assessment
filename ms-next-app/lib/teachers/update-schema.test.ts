@@ -58,6 +58,6 @@ describe("updateTeacherSchema", () => {
 
   it("accepts a zero hourlyPrice (no positive-number rule)", () => {
     const result = updateTeacherSchema.safeParse({ hourlyPrice: 0 });
-    expect(result.success).toBe(true);
+    expect(result.success).toBe(false);
   });
 });

@@ -7,6 +7,7 @@ export type Teacher = {
   education: string | null;
   credentials: string | null;
   onlineAvailability: boolean | null;
+  location: string | null;
   hourlyPrice: number | null;
 };
 
@@ -14,7 +15,6 @@ export type RegisterTeacherInput = {
   name: string;
   email: string;
   password: string;
-  hourlyPrice?: number;
 };
 
 /**

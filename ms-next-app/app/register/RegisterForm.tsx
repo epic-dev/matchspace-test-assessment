@@ -11,14 +11,12 @@ type FormValues = {
   name: string;
   email: string;
   password: string;
-  hourlyPrice: string;
 };
 
 const initialValues: FormValues = {
   name: "",
   email: "",
   password: "",
-  hourlyPrice: "",
 };
 
 export function RegisterForm() {
@@ -31,7 +29,6 @@ export function RegisterForm() {
   const nameId = useId();
   const emailId = useId();
   const passwordId = useId();
-  const hourlyPriceId = useId();
 
   function updateField(field: keyof FormValues) {
     return (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -48,9 +45,6 @@ export function RegisterForm() {
       email: values.email,
       password: values.password,
     };
-    if (values.hourlyPrice.trim() !== "") {
-      payload.hourlyPrice = Number(values.hourlyPrice);
-    }
 
     const parsed = registerSchema.safeParse(payload);
     if (!parsed.success) {
@@ -183,39 +177,6 @@ export function RegisterForm() {
           <p
             key={message}
             id={`${passwordId}-error`}
-            className="text-sm text-red-600 dark:text-red-400"
-          >
-            {message}
-          </p>
-        ))}
-      </div>
-
-      <div className="flex flex-col gap-1">
-        <label
-          htmlFor={hourlyPriceId}
-          className="text-sm font-medium text-black dark:text-zinc-50"
-        >
-          Hourly price (optional)
-        </label>
-        <input
-          id={hourlyPriceId}
-          name="hourlyPrice"
-          type="number"
-          min="0"
-          step="0.01"
-          inputMode="decimal"
-          value={values.hourlyPrice}
-          onChange={updateField("hourlyPrice")}
-          aria-invalid={fieldErrors.hourlyPrice ? true : undefined}
-          aria-describedby={
-            fieldErrors.hourlyPrice ? `${hourlyPriceId}-error` : undefined
-          }
-          className="rounded-md border border-black/[.15] bg-transparent px-3 py-2 text-sm text-black outline-none focus:border-black/40 dark:border-white/[.2] dark:text-zinc-50 dark:focus:border-white/40"
-        />
-        {fieldErrors.hourlyPrice?.map((message) => (
-          <p
-            key={message}
-            id={`${hourlyPriceId}-error`}
             className="text-sm text-red-600 dark:text-red-400"
           >
             {message}

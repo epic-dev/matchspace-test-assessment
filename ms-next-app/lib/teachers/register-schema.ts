@@ -9,10 +9,6 @@ export const registerSchema = z.object({
   name: z.string().trim().min(1, "Name is required"),
   email: z.email("Enter a valid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
-  hourlyPrice: z
-    .number()
-    .positive("Hourly price must be greater than 0")
-    .optional(),
 });
 
 export type RegisterInput = z.infer<typeof registerSchema>;

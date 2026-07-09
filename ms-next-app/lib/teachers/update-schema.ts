@@ -10,14 +10,13 @@ import { z } from "zod";
  * (Task 4) so both sides agree on the shape without duplicating it.
  */
 export const updateTeacherSchema = z.object({
-  name: z.string().trim().optional(),
   bio: z.string().trim().optional(),
-  instruments: z.array(z.string().trim()).optional(),
+  instruments: z.array(z.string().trim()),
   education: z.string().trim().optional(),
   credentials: z.string().trim().optional(),
   location: z.string().trim().optional(),
   onlineAvailability: z.boolean().optional(),
-  hourlyPrice: z.number().optional(),
+  hourlyPrice: z.number(),
 });
 
 export type UpdateTeacherRequest = z.infer<typeof updateTeacherSchema>;
