@@ -11,11 +11,11 @@ The Saas platform for music teachers. Teachers can use the platform to represent
         - credentials or education
         - lesson location or online availability
         - hourly price
-    - receive booking requests from students
+    - receive booking requests from students (out of scope)
     - update profile
-    - set available lessons time
-2. Users should be able to display a list of all teachers
-3. Users should be able to display teacher details
+    - set available lessons time  (out of scope)
+2. Users should be able to view a list of all teachers
+3. Users should be able to view teacher details
 4. Users should be able to book a lesson with a certain teacher, providing
     - student name
     - student email
@@ -93,8 +93,8 @@ Simple repositories, adapters, ports and interfaces. Next.js server actions hand
 
 ### Tech stack
 
-Language: TypeScript
-Framework and tools: Next.js latest (App Router), React 19, zod, Stripe client
-Database: Supabase
-Deployment: Vercel
-Alternative deployment: Docker image
+- Language: TypeScript
+- Framework and tools: Next.js latest (App Router), React 19, zod, Stripe client
+- Database: Supabase
+- Deployment: Vercel
+- Alternative deployment: Docker image
