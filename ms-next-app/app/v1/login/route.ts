@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { loginSchema } from "@/lib/auth/login-schema";
+import { loginSchema } from "@/lib/teachers/login-schema";
 import { logger } from "@/lib/logger";
 import { createClient } from "@/lib/supabase/server";
 

@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useId, useState, type FormEvent } from "react";
 
-import { loginSchema, type LoginInput } from "@/lib/auth/login-schema";
+import { loginSchema, type LoginInput } from "@/lib/teachers/login-schema";
 import { logger } from "@/lib/logger";
 
 type FieldErrors = Partial<Record<keyof LoginInput, string[]>>;
