@@ -46,10 +46,11 @@ Add Stripe (test mode) payment to the booking flow: once a booking exists, the s
 - **Goal:** Given a `bookingId`, create a Stripe Checkout Session for the correct amount and return its URL for the client to redirect to.
 - **Steps:**
   1. Define a zod schema for the request body: `{ bookingId: string }`.
-  2. Route handler (`app/v1/checkout/route.ts`): load the booking via the repository (404 if missing), load the teacher via the existing teacher repository to get `hourlyPrice`, compute `amount = hours * hourlyPrice` in cents.
-  3. Create a Stripe Checkout Session (`mode: 'payment'`, one line item describing the lesson booking, `success_url`/`cancel_url` pointing at new `/booking/success` and `/booking/cancel` pages, `metadata: { bookingId }` so the webhook can look the booking back up).
-  4. Persist the session id on the booking via `attachStripeSession`; return `{ url: session.url }`.
-  5. Unit test the route: valid booking → 200 + url, unknown booking → 404, Stripe API failure → mapped 500.
+  2. Route handler (`app/v1/checkout/route.ts`): load the booking via the repository (404 if missing), load the teacher via the existing teacher repository (`getById`) to get `hourlyPrice`. `hourlyPrice` is nullable on the real `Teacher` type — return a 422/clear error if it's `null` rather than computing against it.
+  3. Compute `amount = hours * hourlyPrice` in cents, currency EUR.
+  4. Create a Stripe Checkout Session (`mode: 'payment'`, one line item describing the lesson booking, `success_url`/`cancel_url` pointing at new `/booking/success` and `/booking/cancel` pages, `metadata: { bookingId }` so the webhook can look the booking back up).
+  5. Persist the session id on the booking via `attachStripeSession`; return `{ url: session.url }`.
+  6. Unit test the route: valid booking → 200 + url, unknown booking → 404, teacher with no `hourlyPrice` set → mapped error, Stripe API failure → mapped 500.
 - **Acceptance:** `npm run test` passes; manual `curl -X POST localhost:3000/v1/checkout -d '{"bookingId":"..."}'` against a real (test-mode) booking returns a working `checkout.stripe.com` URL that renders Stripe's test payment page.
 - **Depends on:** 1, 2.
 
@@ -76,10 +77,10 @@ Add Stripe (test mode) payment to the booking flow: once a booking exists, the s
 ## Open questions
 
 INFORMATIONAL:
-- Currency assumed USD — confirm if something else is needed.
 - Confirm `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` as the env var names (can't read `.env` from this session per prior sandbox restriction noted in `plans/teacher-registration.md`).
 - Confirm `/booking/success` and `/booking/cancel` as acceptable route names (not specified in spec).
 - Should `payment_status` also gate a broader `bookings.status` field (e.g. `pending` → `confirmed`) if the other session's booking schema already has its own status column, or is `payment_status` sufficient on its own? Reconcile alongside Task 2.
+- `Teacher.hourlyPrice` is nullable in the real type (`ms-next-app/lib/teachers/repository.ts`) — Task 3 needs an explicit case for a teacher with no price set (reject checkout with a clear error) rather than computing against `null`.
 
 ## Risks
 - **Booking schema not landed yet**: this plan is written against an assumed booking shape since the real one is being built in parallel. Mitigation: Task 2 starts with a reconciliation step against the real schema before writing any migration/repository code.
