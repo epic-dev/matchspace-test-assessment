@@ -92,6 +92,7 @@ CONSTRAINTS
 
 ### ai produced bad code
 - it was explicitly noted that hourly price is in cents in the db, so a stripe payment should containe a value `hours * hourlyPrice`
+- login request was handled directly on the client side (supabase call inside component), when the registration done as expected in the route
 
 ### what to improve 
 - observability: logger on successful operations
