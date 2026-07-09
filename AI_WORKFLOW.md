@@ -1,5 +1,9 @@
 ## AI_WORKFLOW
 
+### Tools
+- VSCode
+- Claude Code
+
 ### Skills required for the project
 1. planner - creates plan for the next feature. `.claude/skills/planner/SKILL.md`
 2. executor - reads the plan and executes it.
@@ -7,9 +11,17 @@
 4. pr-creator - runs github cli command to create a pull request (out of scope)
 
 #### Planning
-1. Based on specification I build a mental model of how things should work altogether
-2. I split the whole work by 2-hour pieces
-3. Use /planner AI skill to plan the first piece. That is the point where I manually review the plan before my approval.
+1. Based on specification I build a mental model of how everything should work together
+2. As a result I write a draft of the design document, where I describe:
+  -  functional requirements
+  -  non-functional requirements
+  -  core entities (domain/data model, briefly)
+  -  API endpoints
+  -  high-level diagram (to see the whole picture)
+4. I split the whole work by ~2-hour chunks following the steps in the design doc.
+5. If needed, I clarify the requrements and add details to the doc.
+6. I use the design doc as a source of truth for AI-assistants
+7. I use `/planner` AI skill to plan the first chunk. That is the point where I manually review the plan before giving my approval.
 
 #### Executing
 1. Run `/executor` agent inside the Claude session where `/planner` created a plan
@@ -23,3 +35,10 @@
 
 #### Ad-hoc bugfix
 Usual dev workflow on fixing bugs. In some cases it makes sense to update the rules for AI or add new skills to prevent issues in the future
+
+
+
+* How you prompted/planned the work
+* What you accepted, changed, or rejected from the AI output
+* Where you applied manual review
+* What you would improve with more time
