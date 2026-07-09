@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { SupabaseTeacherRepository } from "@/lib/teachers/supabase-repository";
 
+import { BookingForm } from "./BookingForm";
+
 /** Shown in place of a field that hasn't been filled in yet. */
 const NOT_PROVIDED = "Not provided yet";
 
@@ -103,6 +105,16 @@ export default async function TeacherDetailPage({ params }: PageProps) {
             <dd className="mt-1 text-black dark:text-zinc-50">{hourlyPriceText}</dd>
           </div>
         </dl>
+
+        <section className="mt-10 border-t border-black/[.08] pt-8 dark:border-white/[.145]">
+          <h2 className="text-xl font-semibold tracking-tight text-black dark:text-zinc-50">
+            Request a lesson
+          </h2>
+          <BookingForm
+            teacherId={teacher.id}
+            defaultIsOnline={teacher.onlineAvailability ?? undefined}
+          />
+        </section>
       </main>
     </div>
   );

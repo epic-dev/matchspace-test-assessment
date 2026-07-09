@@ -55,6 +55,14 @@ overwriting or double allocating a teacher's time.
   `list()`, `GET /v1/teachers`, and `GET /v1/teachers/{id}` all exist for
   real now. Task 2 unblocked and implemented against the existing
   `getById`/`SupabaseTeacherRepository` with no changes to that repository.
+- ⚠️ POST-HOC (Task 3 execution): the `Teacher` domain type
+  (`lib/teachers/repository.ts`) has no `location` field — it was dropped
+  from the teacher detail page in a separate merged branch. Task 3's Step
+  wording ("mirroring the teacher's own location/onlineAvailability as the
+  default") is only followed for `onlineAvailability` (a real field, used to
+  seed the `isOnline` toggle's default). `location` has nothing to mirror
+  from and is a plain, blank, student-filled input — per user confirmation
+  in "My implementation notes".
 
 ## Tasks
 
@@ -105,6 +113,8 @@ overwriting or double allocating a teacher's time.
     `PATCH` route).
 - **Acceptance:** I'll do it by myself.
 - **Depends on:** Task 2 (booking endpoint + teacher lookup).
+- **Status:** done
+- **Completed:** 2026-07-09
 
 ## Open questions
 - INFORMATIONAL: should the booking form default the location/online choice
