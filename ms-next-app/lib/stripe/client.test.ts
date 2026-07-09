@@ -2,9 +2,11 @@ import Stripe from "stripe";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const ENV_KEY = "STRIPE_SECRET_KEY";
+const WEBHOOK_ENV_KEY = "STRIPE_WEBHOOK_SECRET";
 
 describe("stripe client", () => {
   const originalValue = process.env[ENV_KEY];
+  const originalWebhookValue = process.env[WEBHOOK_ENV_KEY];
 
   beforeEach(() => {
     // The client module caches a module-level singleton across calls within
@@ -18,6 +20,11 @@ describe("stripe client", () => {
       delete process.env[ENV_KEY];
     } else {
       process.env[ENV_KEY] = originalValue;
+    }
+    if (originalWebhookValue === undefined) {
+      delete process.env[WEBHOOK_ENV_KEY];
+    } else {
+      process.env[WEBHOOK_ENV_KEY] = originalWebhookValue;
     }
   });
 
@@ -60,5 +67,23 @@ describe("stripe client", () => {
     const second = getStripeClient();
 
     expect(first).toBe(second);
+  });
+
+  it("getStripeWebhookSecret throws when STRIPE_WEBHOOK_SECRET is unset", async () => {
+    delete process.env[WEBHOOK_ENV_KEY];
+
+    const { getStripeWebhookSecret } = await import("./client");
+
+    expect(() => getStripeWebhookSecret()).toThrow(
+      "Missing required environment variable: STRIPE_WEBHOOK_SECRET",
+    );
+  });
+
+  it("getStripeWebhookSecret returns the value when set", async () => {
+    process.env[WEBHOOK_ENV_KEY] = "whsec_test_fake_secret_for_unit_tests";
+
+    const { getStripeWebhookSecret } = await import("./client");
+
+    expect(getStripeWebhookSecret()).toBe("whsec_test_fake_secret_for_unit_tests");
   });
 });

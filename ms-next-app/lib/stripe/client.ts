@@ -16,6 +16,15 @@ export function getStripeSecretKey(): string {
   return requireEnv("STRIPE_SECRET_KEY");
 }
 
+/**
+ * Signing secret used to verify that incoming `/v1/stripe/webhook` requests
+ * really came from Stripe (`stripe.webhooks.constructEvent`). Same fail-loud
+ * pattern as `getStripeSecretKey` — never falls back to a default.
+ */
+export function getStripeWebhookSecret(): string {
+  return requireEnv("STRIPE_WEBHOOK_SECRET");
+}
+
 let stripeSingleton: Stripe | undefined;
 
 /**
